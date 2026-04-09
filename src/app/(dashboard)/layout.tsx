@@ -35,28 +35,41 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
+    <div className="flex h-screen overflow-hidden" style={{ background: '#f2f1ed' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-30 lg:hidden"
+          style={{ background: 'rgba(38, 37, 30, 0.2)' }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-200 dark:border-gray-800 dark:bg-gray-900 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{
+          background: '#f7f7f4',
+          borderRight: '1px solid rgba(38, 37, 30, 0.1)',
+        }}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6 dark:border-gray-800">
-          <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white">
+        <div
+          className="flex h-16 items-center justify-between px-6"
+          style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.1)' }}
+        >
+          <Link
+            href="/dashboard"
+            className="text-xl font-bold"
+            style={{ color: '#26251e', letterSpacing: '-0.03em' }}
+          >
             note-auto
           </Link>
           <button
-            className="rounded-md p-1 text-gray-500 hover:bg-gray-100 lg:hidden dark:hover:bg-gray-800"
+            className="rounded-lg p-1 lg:hidden"
+            style={{ color: 'rgba(38, 37, 30, 0.55)' }}
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -75,11 +88,24 @@ export default function DashboardLayout({
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                }`}
+                className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors"
+                style={{
+                  borderRadius: '9999px',
+                  color: isActive ? '#26251e' : 'rgba(38, 37, 30, 0.55)',
+                  background: isActive ? '#ebeae5' : 'transparent',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#26251e';
+                    e.currentTarget.style.background = 'rgba(38, 37, 30, 0.04)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)';
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
               >
                 <item.icon className="h-5 w-5" />
                 {item.label}
@@ -89,10 +115,20 @@ export default function DashboardLayout({
         </nav>
 
         {/* User / Logout */}
-        <div className="border-t border-gray-200 p-4 dark:border-gray-800">
+        <div className="p-4" style={{ borderTop: '1px solid rgba(38, 37, 30, 0.1)' }}>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+            className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors"
+            style={{
+              borderRadius: '9999px',
+              color: 'rgba(38, 37, 30, 0.55)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#cf2d56';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)';
+            }}
           >
             <LogOut className="h-5 w-5" />
             ログアウト
@@ -103,14 +139,24 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile header */}
-        <header className="flex h-16 items-center border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900 lg:hidden">
+        <header
+          className="flex h-16 items-center px-4 lg:hidden"
+          style={{
+            background: '#f7f7f4',
+            borderBottom: '1px solid rgba(38, 37, 30, 0.1)',
+          }}
+        >
           <button
-            className="rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="rounded-lg p-2"
+            style={{ color: 'rgba(38, 37, 30, 0.55)' }}
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" />
           </button>
-          <span className="ml-3 text-lg font-bold text-gray-900 dark:text-white">
+          <span
+            className="ml-3 text-lg font-bold"
+            style={{ color: '#26251e', letterSpacing: '-0.03em' }}
+          >
             note-auto
           </span>
         </header>

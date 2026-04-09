@@ -5,6 +5,23 @@ import type { Account } from "@/types/database";
 
 type Genre = { id: string; label: string };
 
+const inputStyle = {
+  background: 'transparent',
+  border: '1px solid rgba(38, 37, 30, 0.1)',
+  color: '#26251e',
+  borderRadius: '8px',
+};
+
+const inputFocusClass = "w-full px-3 py-2 text-sm outline-none transition-colors focus:border-[rgba(38,37,30,0.3)]";
+
+const labelStyle = {
+  color: 'rgba(38, 37, 30, 0.55)',
+  fontSize: '0.75rem',
+  fontWeight: 500 as const,
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.05em',
+};
+
 export default function AccountForm({
   account,
   genres,
@@ -71,13 +88,16 @@ export default function AccountForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div
+          className="rounded-lg p-3 text-sm"
+          style={{ background: 'rgba(207, 45, 86, 0.08)', color: '#cf2d56' }}
+        >
           {error}
         </div>
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="mb-1.5 block" style={labelStyle}>
           アカウント名
         </label>
         <input
@@ -86,12 +106,13 @@ export default function AccountForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="例: 自己啓発アカウント"
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className={inputFocusClass}
+          style={inputStyle}
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="mb-1.5 block" style={labelStyle}>
           ジャンル
         </label>
         <input
@@ -100,13 +121,14 @@ export default function AccountForm({
           value={genreId}
           onChange={(e) => setGenreId(e.target.value)}
           placeholder="例: ライフスタイル、副業、健康"
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className={inputFocusClass}
+          style={inputStyle}
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="mb-1.5 block" style={labelStyle}>
             note メールアドレス
           </label>
           <input
@@ -115,26 +137,28 @@ export default function AccountForm({
             value={noteEmail}
             onChange={(e) => setNoteEmail(e.target.value)}
             placeholder="user@example.com"
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className={inputFocusClass}
+            style={inputStyle}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="mb-1.5 block" style={labelStyle}>
             note パスワード
           </label>
           <input
             type="password"
             value={notePassword}
             onChange={(e) => setNotePassword(e.target.value)}
-            placeholder={account ? "変更しない場合は空欄" : "••••••••"}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            placeholder={account ? "変更しない場合は空欄" : "--------"}
+            className={inputFocusClass}
+            style={inputStyle}
           />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="mb-1.5 block" style={labelStyle}>
             X ユーザー名
           </label>
           <input
@@ -143,25 +167,27 @@ export default function AccountForm({
             value={xUsername}
             onChange={(e) => setXUsername(e.target.value)}
             placeholder="@username"
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className={inputFocusClass}
+            style={inputStyle}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="mb-1.5 block" style={labelStyle}>
             X パスワード
           </label>
           <input
             type="password"
             value={xPassword}
             onChange={(e) => setXPassword(e.target.value)}
-            placeholder={account ? "変更しない場合は空欄" : "••••••••"}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            placeholder={account ? "変更しない場合は空欄" : "--------"}
+            className={inputFocusClass}
+            style={inputStyle}
           />
         </div>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+        <label className="mb-1.5 block" style={labelStyle}>
           投稿間隔（分）
         </label>
         <input
@@ -170,7 +196,8 @@ export default function AccountForm({
           min={1}
           value={postInterval}
           onChange={(e) => setPostInterval(Number(e.target.value))}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className={inputFocusClass}
+          style={inputStyle}
         />
       </div>
 
@@ -178,14 +205,28 @@ export default function AccountForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+          style={{
+            background: 'transparent',
+            color: 'rgba(38, 37, 30, 0.55)',
+            border: '1px solid rgba(38, 37, 30, 0.1)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#26251e'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)'; }}
         >
           キャンセル
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+          style={{
+            background: '#ebeae5',
+            color: '#26251e',
+            border: '1px solid rgba(38, 37, 30, 0.1)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#26251e'; }}
         >
           {loading ? "保存中..." : "保存"}
         </button>

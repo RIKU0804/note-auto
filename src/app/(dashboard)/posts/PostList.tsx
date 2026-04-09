@@ -2,9 +2,6 @@
 
 import { useState } from "react";
 import {
-  CheckCircle2,
-  Clock,
-  XCircle,
   ExternalLink,
   RefreshCw,
   ChevronLeft,
@@ -24,6 +21,12 @@ const statusLabels: Record<Post["status"], string> = {
   failed: "失敗",
 };
 
+const statusColors: Record<Post["status"], string> = {
+  posted: "#1f8a65",
+  failed: "#cf2d56",
+  queued: "#c08532",
+};
+
 const PER_PAGE = 10;
 
 export default function PostList({
@@ -40,7 +43,6 @@ export default function PostList({
   const [total, setTotal] = useState(totalCount);
   const [loading, setLoading] = useState(false);
 
-  // Filters
   const [filterAccount, setFilterAccount] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -87,14 +89,32 @@ export default function PostList({
   const accountName = (id: string) =>
     accounts.find((a) => a.id === id)?.name ?? "不明";
 
+  const selectStyle = {
+    background: '#e6e5e0',
+    border: '1px solid rgba(38, 37, 30, 0.1)',
+    color: '#26251e',
+    borderRadius: '9999px',
+  };
+
+  const dateInputStyle = {
+    background: 'transparent',
+    border: '1px solid rgba(38, 37, 30, 0.1)',
+    color: '#26251e',
+    borderRadius: '8px',
+  };
+
   return (
     <>
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <div
+        className="flex flex-wrap gap-3 rounded-lg p-4"
+        style={{ background: '#f7f7f4', border: '1px solid rgba(38, 37, 30, 0.1)' }}
+      >
         <select
           value={filterAccount}
           onChange={(e) => setFilterAccount(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="px-3 py-2 text-sm outline-none"
+          style={selectStyle}
         >
           <option value="">すべてのアカウント</option>
           {accounts.map((a) => (
@@ -107,7 +127,8 @@ export default function PostList({
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="px-3 py-2 text-sm outline-none"
+          style={selectStyle}
         >
           <option value="">すべてのステータス</option>
           <option value="queued">待機中</option>
@@ -119,49 +140,62 @@ export default function PostList({
           type="date"
           value={filterDateFrom}
           onChange={(e) => setFilterDateFrom(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="px-3 py-2 text-sm outline-none"
+          style={dateInputStyle}
           placeholder="開始日"
         />
         <input
           type="date"
           value={filterDateTo}
           onChange={(e) => setFilterDateTo(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="px-3 py-2 text-sm outline-none"
+          style={dateInputStyle}
           placeholder="終了日"
         />
 
         <button
           onClick={handleFilter}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          className="px-4 py-2 text-sm font-medium transition-colors"
+          style={{
+            borderRadius: '9999px',
+            background: '#ebeae5',
+            color: '#26251e',
+            border: '1px solid rgba(38, 37, 30, 0.1)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#26251e'; }}
         >
           フィルター適用
         </button>
       </div>
 
       {/* Posts table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div
+        className="overflow-x-auto rounded-lg"
+        style={{ background: '#f7f7f4', border: '1px solid rgba(38, 37, 30, 0.1)' }}
+      >
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+            <tr style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.1)' }}>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                 日時
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                 アカウント
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                 サイクル
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                 タイトル
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                 ステータス
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                 URL
               </th>
-              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                 操作
               </th>
             </tr>
@@ -171,7 +205,8 @@ export default function PostList({
               <tr>
                 <td
                   colSpan={7}
-                  className="px-4 py-12 text-center text-gray-400"
+                  className="px-4 py-12 text-center"
+                  style={{ color: 'rgba(38, 37, 30, 0.4)' }}
                 >
                   投稿がありません
                 </td>
@@ -180,43 +215,32 @@ export default function PostList({
               posts.map((post) => (
                 <tr
                   key={post.id}
-                  className="border-b border-gray-50 dark:border-gray-800/50"
+                  style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.06)' }}
                 >
-                  <td className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-300">
+                  <td className="whitespace-nowrap px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                     {new Date(post.created_at).toLocaleDateString("ja-JP")}
                   </td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                  <td className="px-4 py-3" style={{ color: '#26251e' }}>
                     {accountName(post.account_id)}
                   </td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                  <td className="px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
                     {cycleLabels[post.cycle]}
                   </td>
-                  <td className="max-w-[200px] truncate px-4 py-3 font-medium text-gray-900 dark:text-white">
+                  <td className="max-w-[200px] truncate px-4 py-3 font-medium" style={{ color: '#26251e' }}>
                     {post.title}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                        post.status === "posted"
-                          ? "text-green-600"
-                          : post.status === "failed"
-                            ? "text-red-600"
-                            : "text-yellow-600"
-                      }`}
-                    >
-                      {post.status === "posted" && (
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      )}
-                      {post.status === "failed" && (
-                        <XCircle className="h-3.5 w-3.5" />
-                      )}
-                      {post.status === "queued" && (
-                        <Clock className="h-3.5 w-3.5" />
-                      )}
-                      {statusLabels[post.status]}
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: statusColors[post.status] }}
+                      />
+                      <span style={{ color: statusColors[post.status] }}>
+                        {statusLabels[post.status]}
+                      </span>
                     </span>
                     {post.status === "failed" && post.error_message && (
-                      <p className="mt-1 text-xs text-red-400">
+                      <p className="mt-1 text-xs" style={{ color: 'rgba(207, 45, 86, 0.7)' }}>
                         {post.error_message}
                       </p>
                     )}
@@ -227,7 +251,10 @@ export default function PostList({
                         href={post.note_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                        className="inline-flex items-center gap-1 text-sm transition-colors"
+                        style={{ color: '#f54e00' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = '#f54e00'; }}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         note
@@ -238,7 +265,18 @@ export default function PostList({
                     {post.status === "failed" && (
                       <button
                         onClick={() => handleRetry(post.id)}
-                        className="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/30"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors"
+                        style={{
+                          borderRadius: '9999px',
+                          background: 'rgba(245, 78, 0, 0.08)',
+                          color: '#f54e00',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'rgba(245, 78, 0, 0.15)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(245, 78, 0, 0.08)';
+                        }}
                       >
                         <RefreshCw className="h-3 w-3" />
                         再試行
@@ -255,7 +293,7 @@ export default function PostList({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
             全 {total} 件中 {page * PER_PAGE + 1} -{" "}
             {Math.min((page + 1) * PER_PAGE, total)} 件
           </p>
@@ -263,7 +301,10 @@ export default function PostList({
             <button
               onClick={() => fetchPosts(page - 1)}
               disabled={page === 0 || loading}
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
+              style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.color = '#26251e'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)'; }}
             >
               <ChevronLeft className="h-4 w-4" />
               前へ
@@ -271,7 +312,10 @@ export default function PostList({
             <button
               onClick={() => fetchPosts(page + 1)}
               disabled={page >= totalPages - 1 || loading}
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
+              style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+              onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.color = '#26251e'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)'; }}
             >
               次へ
               <ChevronRight className="h-4 w-4" />
