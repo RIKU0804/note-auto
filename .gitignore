@@ -32,5 +32,10 @@ Thumbs.db
 # Playwright
 /ms-playwright/
 
+# Next.js
+.next/
+out/
+node_modules/
+
 # Logs
 *.log

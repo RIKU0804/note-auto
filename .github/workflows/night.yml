@@ -1,0 +1,30 @@
+name: Night Cycle
+on:
+  schedule:
+    - cron: '45 10 * * *'  # 19:45 JST (10:45 UTC)
+  workflow_dispatch:
+    inputs:
+      accounts:
+        description: 'Account IDs (comma-separated, or "all")'
+        default: 'all'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          pip install -r scripts/requirements.txt
+          playwright install chromium --with-deps
+      - name: Run night cycle
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+        run: python scripts/worker.py --cycle night
