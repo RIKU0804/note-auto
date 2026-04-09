@@ -1,0 +1,36 @@
+{
+  "genres": [
+    {
+      "name": "lifestyle",
+      "search_keywords": ["ライフスタイル", "暮らし", "生活改善", "習慣", "ルーティン"],
+      "note_price": 500,
+      "article_style": "カジュアルで親しみやすいトーン。日常の気づきや体験談を交えて読みやすく。",
+      "reply_style": "共感ベースで寄り添う返信。絵文字は控えめに。",
+      "promo_tweet_template": "毎日をちょっと良くするヒント、noteにまとめました。\n\n{title}\n{url}"
+    },
+    {
+      "name": "money",
+      "search_keywords": ["お金", "副業", "節約", "投資", "資産形成"],
+      "note_price": 980,
+      "article_style": "具体的な数字やデータを交えた説得力のある文体。信頼感を重視。",
+      "reply_style": "論理的かつ丁寧な返信。具体例を添えて。",
+      "promo_tweet_template": "知らないと損するお金の話、noteにまとめました。\n\n{title}\n{url}"
+    },
+    {
+      "name": "health",
+      "search_keywords": ["健康", "ダイエット", "筋トレ", "メンタルヘルス", "睡眠"],
+      "note_price": 500,
+      "article_style": "エビデンスに基づきつつ、わかりやすく噛み砕いた解説。",
+      "reply_style": "優しく励ます返信。無理のないアドバイスを添えて。",
+      "promo_tweet_template": "カラダとココロの整え方、noteにまとめました。\n\n{title}\n{url}"
+    },
+    {
+      "name": "career",
+      "search_keywords": ["キャリア", "転職", "スキルアップ", "仕事術", "フリーランス"],
+      "note_price": 780,
+      "article_style": "実践的でアクション可能なアドバイス。読者の背中を押す文体。",
+      "reply_style": "前向きで建設的な返信。次のステップを提案。",
+      "promo_tweet_template": "キャリアを前に進めるヒント、noteにまとめました。\n\n{title}\n{url}"
+    }
+  ]
+}

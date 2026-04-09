@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  worker:
+    build: .
+    command: python worker.py --cycle morning
+    env_file: .env
+
+  discord-bot:
+    build: .
+    command: python discord_bot.py
+    env_file: .env
