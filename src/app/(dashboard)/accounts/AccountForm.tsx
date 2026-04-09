@@ -5,6 +5,12 @@ import type { Account } from "@/types/database";
 
 type Genre = { id: string; label: string };
 
+const inputClasses =
+  "w-full rounded-xl border border-[#e5e5e7] bg-[#fafafa] px-4 py-3 text-[14px] text-[#1d1d1f] outline-none transition-all duration-200 placeholder:text-[#aeaeb2] focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10";
+
+const labelClasses =
+  "block text-[12px] font-medium uppercase tracking-wider text-[#86868b] mb-1.5";
+
 export default function AccountForm({
   account,
   genres,
@@ -69,123 +75,113 @@ export default function AccountForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+        <div className="rounded-xl bg-[#fff0f0] px-4 py-3 text-[13px] text-[#ff3b30]">
           {error}
         </div>
       )}
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          アカウント名
-        </label>
+        <label className={labelClasses}>アカウント名</label>
         <input
           type="text"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="例: 自己啓発アカウント"
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className={inputClasses}
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          ジャンル
-        </label>
+        <label className={labelClasses}>ジャンル</label>
         <input
           type="text"
           required
           value={genreId}
           onChange={(e) => setGenreId(e.target.value)}
           placeholder="例: ライフスタイル、副業、健康"
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className={inputClasses}
         />
       </div>
 
+      <div className="h-px bg-[#e5e5e7]/60" />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            note メールアドレス
-          </label>
+          <label className={labelClasses}>note メールアドレス</label>
           <input
             type="email"
             required
             value={noteEmail}
             onChange={(e) => setNoteEmail(e.target.value)}
             placeholder="user@example.com"
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className={inputClasses}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            note パスワード
-          </label>
+          <label className={labelClasses}>note パスワード</label>
           <input
             type="password"
             value={notePassword}
             onChange={(e) => setNotePassword(e.target.value)}
             placeholder={account ? "変更しない場合は空欄" : "••••••••"}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className={inputClasses}
           />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            X ユーザー名
-          </label>
+          <label className={labelClasses}>X ユーザー名</label>
           <input
             type="text"
             required
             value={xUsername}
             onChange={(e) => setXUsername(e.target.value)}
             placeholder="@username"
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className={inputClasses}
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-            X パスワード
-          </label>
+          <label className={labelClasses}>X パスワード</label>
           <input
             type="password"
             value={xPassword}
             onChange={(e) => setXPassword(e.target.value)}
             placeholder={account ? "変更しない場合は空欄" : "••••••••"}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className={inputClasses}
           />
         </div>
       </div>
 
+      <div className="h-px bg-[#e5e5e7]/60" />
+
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-          投稿間隔（分）
-        </label>
+        <label className={labelClasses}>投稿間隔（分）</label>
         <input
           type="number"
           required
           min={1}
           value={postInterval}
           onChange={(e) => setPostInterval(Number(e.target.value))}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className={inputClasses}
         />
       </div>
 
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex justify-end gap-3 pt-3">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          className="rounded-full px-5 py-2.5 text-[13px] font-medium text-[#86868b] transition-all duration-200 hover:bg-[#f5f5f7] hover:text-[#1d1d1f]"
         >
           キャンセル
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-full bg-[#0071e3] px-6 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:bg-[#0077ed] active:scale-[0.98] disabled:opacity-50"
         >
           {loading ? "保存中..." : "保存"}
         </button>
