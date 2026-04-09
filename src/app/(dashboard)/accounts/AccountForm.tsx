@@ -94,17 +94,14 @@ export default function AccountForm({
         <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
           ジャンル
         </label>
-        <select
+        <input
+          type="text"
+          required
           value={genreId}
           onChange={(e) => setGenreId(e.target.value)}
+          placeholder="例: ライフスタイル、副業、健康"
           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-        >
-          {genres.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.label}
-            </option>
-          ))}
-        </select>
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
