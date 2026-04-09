@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Send, Check } from "lucide-react";
+import { Bell, Send, Check } from "lucide-react";
 
 export default function SettingsForm({
   initialWebhookUrl,
@@ -77,24 +77,23 @@ export default function SettingsForm({
   };
 
   return (
-    <form onSubmit={handleSave} className="space-y-5">
+    <form onSubmit={handleSave} className="space-y-4">
       {message && (
         <div
-          className={`flex items-center gap-2 rounded-xl px-4 py-3 text-[13px] ${
+          className={`flex items-center gap-2 rounded-lg p-3 text-sm ${
             message.type === "success"
-              ? "bg-[#f0faf0] text-[#34c759]"
-              : "bg-[#fff0f0] text-[#ff3b30]"
+              ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+              : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
           }`}
         >
-          {message.type === "success" && (
-            <Check className="h-4 w-4" strokeWidth={2} />
-          )}
+          {message.type === "success" && <Check className="h-4 w-4" />}
           {message.text}
         </div>
       )}
 
       <div>
-        <label className="block text-[12px] font-medium uppercase tracking-wider text-[#86868b] mb-1.5">
+        <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <Bell className="h-4 w-4" />
           Discord Webhook URL
         </label>
         <input
@@ -102,15 +101,18 @@ export default function SettingsForm({
           value={webhookUrl}
           onChange={(e) => setWebhookUrl(e.target.value)}
           placeholder="https://discord.com/api/webhooks/..."
-          className="w-full rounded-xl border border-[#e5e5e7] bg-[#fafafa] px-4 py-3 text-[14px] text-[#1d1d1f] outline-none transition-all duration-200 placeholder:text-[#aeaeb2] focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
+        <p className="mt-1 text-xs text-gray-400">
+          投稿の成功・失敗をDiscordに通知します
+        </p>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
+      <div className="flex gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[#0071e3] px-6 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:bg-[#0077ed] active:scale-[0.98] disabled:opacity-50"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? "保存中..." : "保存"}
         </button>
@@ -118,9 +120,9 @@ export default function SettingsForm({
           type="button"
           onClick={handleTest}
           disabled={testing || !webhookUrl}
-          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-medium text-[#86868b] ring-1 ring-[#e5e5e7] transition-all duration-200 hover:bg-[#f5f5f7] hover:text-[#1d1d1f] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
         >
-          <Send className="h-3.5 w-3.5" strokeWidth={1.8} />
+          <Send className="h-4 w-4" />
           {testing ? "送信中..." : "テスト送信"}
         </button>
       </div>

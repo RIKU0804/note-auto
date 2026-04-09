@@ -2,8 +2,13 @@
 
 import { useState } from "react";
 import {
+  CheckCircle2,
+  Clock,
+  XCircle,
   ExternalLink,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { Account, Post } from "@/types/database";
 
@@ -13,19 +18,13 @@ const cycleLabels: Record<string, string> = {
   night: "夜",
 };
 
-const statusConfig: Record<
-  Post["status"],
-  { label: string; dot: string; text: string }
-> = {
-  queued: { label: "待機中", dot: "bg-[#ff9f0a]", text: "text-[#ff9f0a]" },
-  posted: { label: "投稿済み", dot: "bg-[#34c759]", text: "text-[#34c759]" },
-  failed: { label: "失敗", dot: "bg-[#ff3b30]", text: "text-[#ff3b30]" },
+const statusLabels: Record<Post["status"], string> = {
+  queued: "待機中",
+  posted: "投稿済み",
+  failed: "失敗",
 };
 
 const PER_PAGE = 10;
-
-const filterSelectClasses =
-  "rounded-xl border border-[#e5e5e7] bg-[#fafafa] px-3.5 py-2.5 text-[13px] text-[#1d1d1f] outline-none transition-all duration-200 focus:border-[#0071e3] focus:bg-white focus:ring-2 focus:ring-[#0071e3]/10";
 
 export default function PostList({
   initialPosts,
@@ -41,6 +40,7 @@ export default function PostList({
   const [total, setTotal] = useState(totalCount);
   const [loading, setLoading] = useState(false);
 
+  // Filters
   const [filterAccount, setFilterAccount] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -79,11 +79,7 @@ export default function PostList({
     const res = await fetch(`/api/posts/${postId}/retry`, { method: "POST" });
     if (res.ok) {
       setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? { ...p, status: "queued" as const, error_message: null }
-            : p
-        )
+        prev.map((p) => (p.id === postId ? { ...p, status: "queued" as const, error_message: null } : p))
       );
     }
   };
@@ -92,23 +88,13 @@ export default function PostList({
     accounts.find((a) => a.id === id)?.name ?? "不明";
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-[32px] font-bold tracking-tight text-[#1d1d1f]">
-          投稿一覧
-        </h1>
-        <p className="mt-1.5 text-[15px] text-[#86868b]">
-          すべての投稿履歴を確認
-        </p>
-      </div>
-
+    <>
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
         <select
           value={filterAccount}
           onChange={(e) => setFilterAccount(e.target.value)}
-          className={filterSelectClasses}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         >
           <option value="">すべてのアカウント</option>
           {accounts.map((a) => (
@@ -121,7 +107,7 @@ export default function PostList({
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className={filterSelectClasses}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         >
           <option value="">すべてのステータス</option>
           <option value="queued">待機中</option>
@@ -133,128 +119,134 @@ export default function PostList({
           type="date"
           value={filterDateFrom}
           onChange={(e) => setFilterDateFrom(e.target.value)}
-          className={filterSelectClasses}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           placeholder="開始日"
         />
         <input
           type="date"
           value={filterDateTo}
           onChange={(e) => setFilterDateTo(e.target.value)}
-          className={filterSelectClasses}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           placeholder="終了日"
         />
 
         <button
           onClick={handleFilter}
-          className="rounded-full bg-[#0071e3] px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:bg-[#0077ed] active:scale-[0.98]"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
         >
-          適用
+          フィルター適用
         </button>
       </div>
 
       {/* Posts table */}
-      <div className="overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]">
-        <table className="w-full">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#e5e5e7]/60">
-              <th className="px-6 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+            <tr className="border-b border-gray-200 dark:border-gray-800">
+              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 日時
               </th>
-              <th className="px-6 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 アカウント
               </th>
-              <th className="px-6 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 サイクル
               </th>
-              <th className="px-6 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 タイトル
               </th>
-              <th className="px-6 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 ステータス
               </th>
-              <th className="px-6 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 URL
               </th>
-              <th className="px-6 py-3.5 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+              <th className="px-4 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                 操作
               </th>
             </tr>
           </thead>
-          <tbody className={loading ? "opacity-40" : ""}>
+          <tbody className={loading ? "opacity-50" : ""}>
             {posts.length === 0 ? (
               <tr>
                 <td
                   colSpan={7}
-                  className="px-6 py-16 text-center text-[14px] text-[#aeaeb2]"
+                  className="px-4 py-12 text-center text-gray-400"
                 >
                   投稿がありません
                 </td>
               </tr>
             ) : (
-              posts.map((post) => {
-                const config = statusConfig[post.status];
-                return (
-                  <tr
-                    key={post.id}
-                    className="border-t border-[#f5f5f7] transition-colors hover:bg-[#fafafa]"
-                  >
-                    <td className="whitespace-nowrap px-6 py-4 text-[13px] text-[#6e6e73]">
-                      {new Date(post.created_at).toLocaleDateString("ja-JP")}
-                    </td>
-                    <td className="px-6 py-4 text-[13px] text-[#1d1d1f]">
-                      {accountName(post.account_id)}
-                    </td>
-                    <td className="px-6 py-4 text-[13px] text-[#6e6e73]">
-                      {cycleLabels[post.cycle]}
-                    </td>
-                    <td className="max-w-[200px] truncate px-6 py-4 text-[13px] font-medium text-[#1d1d1f]">
-                      {post.title}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center gap-2 text-[12px] font-medium ${config.text}`}
-                      >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${config.dot}`}
-                        />
-                        {config.label}
-                      </span>
-                      {post.status === "failed" && post.error_message && (
-                        <p className="mt-1 text-[11px] text-[#aeaeb2]">
-                          {post.error_message}
-                        </p>
+              posts.map((post) => (
+                <tr
+                  key={post.id}
+                  className="border-b border-gray-50 dark:border-gray-800/50"
+                >
+                  <td className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-300">
+                    {new Date(post.created_at).toLocaleDateString("ja-JP")}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                    {accountName(post.account_id)}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                    {cycleLabels[post.cycle]}
+                  </td>
+                  <td className="max-w-[200px] truncate px-4 py-3 font-medium text-gray-900 dark:text-white">
+                    {post.title}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                        post.status === "posted"
+                          ? "text-green-600"
+                          : post.status === "failed"
+                            ? "text-red-600"
+                            : "text-yellow-600"
+                      }`}
+                    >
+                      {post.status === "posted" && (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
                       )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {post.note_url && (
-                        <a
-                          href={post.note_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[13px] text-[#0071e3] transition-colors hover:text-[#0077ed]"
-                        >
-                          <ExternalLink
-                            className="h-3.5 w-3.5"
-                            strokeWidth={1.8}
-                          />
-                          note
-                        </a>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
                       {post.status === "failed" && (
-                        <button
-                          onClick={() => handleRetry(post.id)}
-                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium text-[#86868b] ring-1 ring-[#e5e5e7] transition-all duration-200 hover:bg-[#f5f5f7] hover:text-[#1d1d1f]"
-                        >
-                          <RefreshCw className="h-3 w-3" strokeWidth={2} />
-                          再試行
-                        </button>
+                        <XCircle className="h-3.5 w-3.5" />
                       )}
-                    </td>
-                  </tr>
-                );
-              })
+                      {post.status === "queued" && (
+                        <Clock className="h-3.5 w-3.5" />
+                      )}
+                      {statusLabels[post.status]}
+                    </span>
+                    {post.status === "failed" && post.error_message && (
+                      <p className="mt-1 text-xs text-red-400">
+                        {post.error_message}
+                      </p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {post.note_url && (
+                      <a
+                        href={post.note_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        note
+                      </a>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {post.status === "failed" && (
+                      <button
+                        onClick={() => handleRetry(post.id)}
+                        className="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/30"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        再試行
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
@@ -262,32 +254,31 @@ export default function PostList({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-[13px] text-[#86868b]">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             全 {total} 件中 {page * PER_PAGE + 1} -{" "}
             {Math.min((page + 1) * PER_PAGE, total)} 件
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex gap-2">
             <button
               onClick={() => fetchPosts(page - 1)}
               disabled={page === 0 || loading}
-              className="text-[13px] font-medium text-[#0071e3] transition-colors hover:text-[#0077ed] disabled:text-[#d1d1d6] disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
+              <ChevronLeft className="h-4 w-4" />
               前へ
             </button>
-            <span className="text-[13px] text-[#86868b]">
-              {page + 1} / {totalPages}
-            </span>
             <button
               onClick={() => fetchPosts(page + 1)}
               disabled={page >= totalPages - 1 || loading}
-              className="text-[13px] font-medium text-[#0071e3] transition-colors hover:text-[#0077ed] disabled:text-[#d1d1d6] disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-40 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               次へ
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

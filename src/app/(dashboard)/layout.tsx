@@ -35,31 +35,28 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#fafafa]">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col bg-white/80 backdrop-blur-xl border-r border-[#e5e5e7]/60 transition-transform duration-300 ease-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-gray-200 bg-white transition-transform duration-200 dark:border-gray-800 dark:bg-gray-900 lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Logo */}
-        <div className="flex h-[72px] items-center justify-between px-7">
-          <Link
-            href="/dashboard"
-            className="text-[19px] font-semibold tracking-tight text-[#1d1d1f]"
-          >
+        <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6 dark:border-gray-800">
+          <Link href="/dashboard" className="text-xl font-bold text-gray-900 dark:text-white">
             note-auto
           </Link>
           <button
-            className="rounded-lg p-1.5 text-[#86868b] transition-colors hover:bg-[#f5f5f7] lg:hidden"
+            className="rounded-md p-1 text-gray-500 hover:bg-gray-100 lg:hidden dark:hover:bg-gray-800"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -67,47 +64,37 @@ export default function DashboardLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 pt-2">
-          <div className="space-y-1">
-            {navItems.map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`group relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-[#f5f5f7] text-[#1d1d1f]"
-                      : "text-[#86868b] hover:bg-[#f5f5f7]/60 hover:text-[#1d1d1f]"
-                  }`}
-                >
-                  {isActive && (
-                    <div className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-[#0071e3]" />
-                  )}
-                  <item.icon
-                    className={`h-[18px] w-[18px] ${
-                      isActive ? "text-[#0071e3]" : "text-[#86868b] group-hover:text-[#6e6e73]"
-                    }`}
-                    strokeWidth={1.8}
-                  />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
+        <nav className="flex-1 space-y-1 px-3 py-4">
+          {navItems.map((item) => {
+            const isActive =
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                }`}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* User / Logout */}
-        <div className="border-t border-[#e5e5e7]/60 px-4 py-5">
+        <div className="border-t border-gray-200 p-4 dark:border-gray-800">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-medium text-[#86868b] transition-all duration-200 hover:bg-[#f5f5f7]/60 hover:text-[#1d1d1f]"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
           >
-            <LogOut className="h-[18px] w-[18px]" strokeWidth={1.8} />
+            <LogOut className="h-5 w-5" />
             ログアウト
           </button>
         </div>
@@ -116,23 +103,21 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Mobile header */}
-        <header className="flex h-[56px] items-center border-b border-[#e5e5e7]/60 bg-white/80 backdrop-blur-xl px-5 lg:hidden">
+        <header className="flex h-16 items-center border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900 lg:hidden">
           <button
-            className="rounded-lg p-2 text-[#86868b] transition-colors hover:bg-[#f5f5f7]"
+            className="rounded-md p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
             onClick={() => setSidebarOpen(true)}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </button>
-          <span className="ml-3 text-[17px] font-semibold tracking-tight text-[#1d1d1f]">
+          <span className="ml-3 text-lg font-bold text-gray-900 dark:text-white">
             note-auto
           </span>
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-5xl px-6 py-10 sm:px-8 lg:px-12 lg:py-12">
-            {children}
-          </div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {children}
         </main>
       </div>
     </div>

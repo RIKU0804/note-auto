@@ -1,3 +1,12 @@
+import {
+  CheckCircle2,
+  Clock,
+  XCircle,
+  AlertCircle,
+  Users,
+  FileText,
+  TrendingUp,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import type { Account, Post, Log } from "@/types/database";
 
@@ -7,27 +16,17 @@ const cycleLabels: Record<string, string> = {
   night: "夜",
 };
 
-function getGreeting(): string {
-  const hour = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" })
-  ).getHours();
-  if (hour < 12) return "おはようございます";
-  if (hour < 18) return "こんにちは";
-  return "おつかれさまです";
-}
-
-function StatusDot({ status }: { status: Post["status"] | "pending" }) {
-  const colors: Record<string, string> = {
-    posted: "bg-[#34c759]",
-    failed: "bg-[#ff3b30]",
-    queued: "bg-[#ff9f0a]",
-    pending: "bg-[#d1d1d6]",
-  };
-  return (
-    <span
-      className={`inline-block h-2 w-2 rounded-full ${colors[status] ?? colors.pending}`}
-    />
-  );
+function StatusIcon({ status }: { status: Post["status"] | "pending" }) {
+  switch (status) {
+    case "posted":
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    case "failed":
+      return <XCircle className="h-5 w-5 text-red-500" />;
+    case "queued":
+      return <Clock className="h-5 w-5 text-yellow-500" />;
+    default:
+      return <AlertCircle className="h-5 w-5 text-gray-400" />;
+  }
 }
 
 export default async function DashboardPage() {
@@ -71,6 +70,7 @@ export default async function DashboardPage() {
       ? Math.round((totalPosted / todayPosts.length) * 100)
       : 0;
 
+  // Build status grid: for each account, check each cycle
   const cycles: Post["cycle"][] = ["morning", "noon", "night"];
   const accountStatuses = accounts.map((account) => {
     const accountPosts = todayPosts.filter(
@@ -87,71 +87,89 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="space-y-10">
-      {/* Greeting */}
+    <div className="space-y-8">
       <div>
-        <h1 className="text-[32px] font-bold tracking-tight text-[#1d1d1f]">
-          {getGreeting()}
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          ダッシュボード
         </h1>
-        <p className="mt-1.5 text-[15px] text-[#86868b]">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           本日の投稿状況と統計情報
         </p>
       </div>
 
       {/* Stats cards */}
-      <div className="grid gap-5 sm:grid-cols-3">
-        <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-black/[0.04]">
-          <p className="text-[13px] font-medium text-[#86868b]">
-            本日の投稿数
-          </p>
-          <p className="mt-2 text-[36px] font-bold tracking-tight text-[#1d1d1f] leading-none">
-            {totalPosted}
-            <span className="ml-1 text-[15px] font-normal text-[#aeaeb2]">
-              / {accounts.length * 3}
-            </span>
-          </p>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-blue-50 p-2.5 dark:bg-blue-900/30">
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                本日の投稿数
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {totalPosted}
+                <span className="text-sm font-normal text-gray-400">
+                  {" "}
+                  / {accounts.length * 3}
+                </span>
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-black/[0.04]">
-          <p className="text-[13px] font-medium text-[#86868b]">
-            成功率
-          </p>
-          <p className="mt-2 text-[36px] font-bold tracking-tight text-[#1d1d1f] leading-none">
-            {successRate}
-            <span className="ml-0.5 text-[15px] font-normal text-[#aeaeb2]">
-              %
-            </span>
-          </p>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-green-50 p-2.5 dark:bg-green-900/30">
+              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                成功率
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {successRate}%
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-7 shadow-sm ring-1 ring-black/[0.04]">
-          <p className="text-[13px] font-medium text-[#86868b]">
-            総アカウント数
-          </p>
-          <p className="mt-2 text-[36px] font-bold tracking-tight text-[#1d1d1f] leading-none">
-            {accounts.length}
-          </p>
+        <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-purple-50 p-2.5 dark:bg-purple-900/30">
+              <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                総アカウント数
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {accounts.length}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Today's posting status */}
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]">
-        <div className="px-7 py-5">
-          <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+      {/* Today's posting status per account */}
+      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             本日の投稿状況
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-sm">
             <thead>
-              <tr className="border-t border-[#e5e5e7]/60">
-                <th className="px-7 py-3 text-left text-[12px] font-medium uppercase tracking-wider text-[#86868b]">
+              <tr className="border-b border-gray-100 dark:border-gray-800">
+                <th className="px-6 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
                   アカウント
                 </th>
                 {cycles.map((c) => (
                   <th
                     key={c}
-                    className="px-7 py-3 text-center text-[12px] font-medium uppercase tracking-wider text-[#86868b]"
+                    className="px-6 py-3 text-center font-medium text-gray-500 dark:text-gray-400"
                   >
                     {cycleLabels[c]}
                   </th>
@@ -163,7 +181,7 @@ export default async function DashboardPage() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-7 py-12 text-center text-[14px] text-[#aeaeb2]"
+                    className="px-6 py-8 text-center text-gray-400"
                   >
                     アカウントがありません
                   </td>
@@ -172,19 +190,19 @@ export default async function DashboardPage() {
                 accountStatuses.map(({ account, cycleStatuses }) => (
                   <tr
                     key={account.id}
-                    className="border-t border-[#f5f5f7]"
+                    className="border-b border-gray-50 dark:border-gray-800/50"
                   >
-                    <td className="px-7 py-4">
-                      <span className="text-[14px] font-medium text-[#1d1d1f]">
-                        {account.name}
-                      </span>
-                      <span className="ml-2 text-[12px] text-[#aeaeb2]">
+                    <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">
+                      {account.name}
+                      <span className="ml-2 text-xs text-gray-400">
                         @{account.x_username}
                       </span>
                     </td>
                     {cycleStatuses.map(({ cycle, status }) => (
-                      <td key={cycle} className="px-7 py-4 text-center">
-                        <StatusDot status={status} />
+                      <td key={cycle} className="px-6 py-3 text-center">
+                        <div className="flex justify-center">
+                          <StatusIcon status={status} />
+                        </div>
                       </td>
                     ))}
                   </tr>
@@ -195,42 +213,38 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent activity */}
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/[0.04]">
-        <div className="px-7 py-5">
-          <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+      {/* Recent activity log */}
+      <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             最近のアクティビティ
           </h2>
         </div>
-        <div>
+        <div className="divide-y divide-gray-100 dark:divide-gray-800">
           {recentLogs.length === 0 ? (
-            <div className="px-7 py-12 text-center text-[14px] text-[#aeaeb2]">
+            <div className="px-6 py-8 text-center text-gray-400">
               アクティビティはありません
             </div>
           ) : (
-            recentLogs.map((log, index) => (
+            recentLogs.map((log) => (
               <div
                 key={log.id}
-                className={`flex items-start gap-4 px-7 py-4 ${
-                  index > 0 ? "border-t border-[#f5f5f7]" : "border-t border-[#e5e5e7]/60"
-                }`}
+                className="flex items-start gap-3 px-6 py-3"
               >
-                <div className="mt-1.5 flex-shrink-0">
-                  <div
-                    className={`h-2 w-2 rounded-full ${
-                      log.level === "error"
-                        ? "bg-[#ff3b30]"
-                        : log.level === "warn"
-                          ? "bg-[#ff9f0a]"
-                          : "bg-[#34c759]"
-                    }`}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] text-[#1d1d1f] leading-relaxed">
+                <div
+                  className={`mt-0.5 h-2 w-2 rounded-full ${
+                    log.level === "error"
+                      ? "bg-red-500"
+                      : log.level === "warn"
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
+                  }`}
+                />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
                     {log.message}
                   </p>
-                  <p className="mt-0.5 text-[12px] text-[#aeaeb2]">
+                  <p className="text-xs text-gray-400">
                     {new Date(log.created_at).toLocaleString("ja-JP")}
                   </p>
                 </div>

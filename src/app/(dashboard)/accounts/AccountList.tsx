@@ -54,83 +54,83 @@ export default function AccountList({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[32px] font-bold tracking-tight text-[#1d1d1f]">
-            アカウント管理
-          </h1>
-          <p className="mt-1.5 text-[15px] text-[#86868b]">
-            X / note アカウントの追加と管理
-          </p>
-        </div>
+      <div className="flex justify-end">
         <button
           onClick={() => {
             setEditingAccount(null);
             setShowForm(true);
           }}
-          className="inline-flex items-center gap-2 rounded-full bg-[#0071e3] px-5 py-2.5 text-[13px] font-medium text-white transition-all duration-200 hover:bg-[#0077ed] active:scale-[0.98]"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
         >
-          <Plus className="h-4 w-4" strokeWidth={2} />
-          追加
+          <Plus className="h-4 w-4" />
+          アカウント追加
         </button>
       </div>
 
       {/* Account cards */}
       {accounts.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-[#d1d1d6] bg-white p-16 text-center">
-          <p className="text-[15px] text-[#86868b]">
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
+          <p className="text-gray-500 dark:text-gray-400">
             アカウントがまだありません。追加してください。
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {accounts.map((account) => (
             <div
               key={account.id}
-              className="group rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/[0.04] transition-all duration-200 hover:shadow-md"
+              className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
             >
               <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-[16px] font-semibold text-[#1d1d1f] truncate">
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">
                     {account.name}
                   </h3>
-                  <p className="mt-0.5 text-[13px] text-[#aeaeb2]">
+                  <p className="mt-0.5 text-sm text-gray-500">
                     @{account.x_username}
                   </p>
                 </div>
+                <span
+                  className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    account.is_active
+                      ? "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                  }`}
+                >
+                  {account.is_active ? "稼働中" : "停止中"}
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-1 text-sm text-gray-500 dark:text-gray-400">
+                <p>ジャンル: {genreLabel(account.genre_id)}</p>
+                <p>投稿間隔: {account.post_interval_minutes}分</p>
+              </div>
+
+              <div className="mt-4 flex items-center gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
                 <button
                   onClick={() => handleToggle(account)}
-                  className={`toggle-switch flex-shrink-0 ${account.is_active ? "active" : ""}`}
-                  aria-label={account.is_active ? "停止" : "開始"}
-                />
-              </div>
-
-              <div className="mt-4 space-y-1.5">
-                <p className="text-[13px] text-[#86868b]">
-                  {genreLabel(account.genre_id)}
-                </p>
-                <p className="text-[13px] text-[#86868b]">
-                  投稿間隔: {account.post_interval_minutes}分
-                </p>
-              </div>
-
-              <div className="mt-5 flex items-center gap-1 border-t border-[#f5f5f7] pt-4">
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    account.is_active
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                      : "bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                  }`}
+                >
+                  {account.is_active ? "停止" : "開始"}
+                </button>
                 <button
                   onClick={() => {
                     setEditingAccount(account);
                     setShowForm(true);
                   }}
-                  className="rounded-lg p-2 text-[#aeaeb2] transition-all duration-200 hover:bg-[#f5f5f7] hover:text-[#6e6e73]"
-                  aria-label="編集"
+                  className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                 >
-                  <Pencil className="h-4 w-4" strokeWidth={1.8} />
+                  <Pencil className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(account.id)}
-                  className="rounded-lg p-2 text-[#aeaeb2] transition-all duration-200 hover:bg-[#fff0f0] hover:text-[#ff3b30]"
-                  aria-label="削除"
+                  className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                 >
-                  <Trash2 className="h-4 w-4" strokeWidth={1.8} />
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -140,27 +140,20 @@ export default function AccountList({
 
       {/* Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-2xl ring-1 ring-black/[0.06]">
-            <h2 className="text-[20px] font-semibold text-[#1d1d1f]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
               {editingAccount ? "アカウント編集" : "アカウント追加"}
             </h2>
-            <p className="mt-1 text-[13px] text-[#86868b]">
-              {editingAccount
-                ? "アカウント情報を更新します"
-                : "新しいアカウントを追加します"}
-            </p>
-            <div className="mt-6">
-              <AccountForm
-                account={editingAccount}
-                genres={genres}
-                onSave={handleSave}
-                onCancel={() => {
-                  setShowForm(false);
-                  setEditingAccount(null);
-                }}
-              />
-            </div>
+            <AccountForm
+              account={editingAccount}
+              genres={genres}
+              onSave={handleSave}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingAccount(null);
+              }}
+            />
           </div>
         </div>
       )}

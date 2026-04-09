@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { User } from "@/types/database";
 import { PLAN_LIMITS } from "@/types/database";
+import { Crown } from "lucide-react";
 import SettingsForm from "./SettingsForm";
 
 export default async function SettingsPage() {
@@ -22,72 +23,68 @@ export default async function SettingsPage() {
   const limits = PLAN_LIMITS[plan];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-[32px] font-bold tracking-tight text-[#1d1d1f]">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           設定
         </h1>
-        <p className="mt-1.5 text-[15px] text-[#86868b]">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           アカウント設定と通知の管理
         </p>
       </div>
 
       {/* Current plan */}
-      <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-black/[0.04]">
-        <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
-          ご利用プラン
-        </h2>
-        <p className="mt-1 text-[13px] text-[#86868b]">
-          現在のプランと利用可能なオプション
-        </p>
+      <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+        <div className="flex items-center gap-3">
+          <div className="rounded-lg bg-yellow-50 p-2.5 dark:bg-yellow-900/30">
+            <Crown className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              現在のプラン
+            </h2>
+          </div>
+        </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          {Object.values(PLAN_LIMITS).map((p) => {
-            const isCurrent = p.plan === plan;
-            return (
-              <div
-                key={p.plan}
-                className={`rounded-2xl p-5 transition-all duration-200 ${
-                  isCurrent
-                    ? "bg-[#f5f5f7] ring-2 ring-[#0071e3]"
-                    : "bg-[#fafafa] ring-1 ring-[#e5e5e7]/60 hover:ring-[#d1d1d6]"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[15px] font-semibold text-[#1d1d1f]">
-                    {p.label}
-                  </h3>
-                  {isCurrent && (
-                    <span className="rounded-full bg-[#0071e3] px-2.5 py-0.5 text-[11px] font-medium text-white">
-                      現在
-                    </span>
-                  )}
-                </div>
-                <p className="mt-2 text-[24px] font-bold tracking-tight text-[#1d1d1f]">
-                  {p.price}
-                </p>
-                <p className="mt-1 text-[13px] text-[#86868b]">
-                  最大 {p.max_accounts} アカウント
-                </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {Object.values(PLAN_LIMITS).map((p) => (
+            <div
+              key={p.plan}
+              className={`rounded-lg border p-4 ${
+                p.plan === plan
+                  ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/20"
+                  : "border-gray-200 dark:border-gray-700"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  {p.label}
+                </h3>
+                {p.plan === plan && (
+                  <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+                    現在
+                  </span>
+                )}
               </div>
-            );
-          })}
+              <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
+                {p.price}
+              </p>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                最大 {p.max_accounts} アカウント
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Discord Webhook settings */}
-      <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-black/[0.04]">
-        <h2 className="text-[17px] font-semibold text-[#1d1d1f]">
+      <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
           Discord 通知設定
         </h2>
-        <p className="mt-1 text-[13px] text-[#86868b]">
-          投稿の成功・失敗をDiscordに通知します
-        </p>
-        <div className="mt-6">
-          <SettingsForm
-            initialWebhookUrl={userData?.discord_webhook_url ?? ""}
-          />
-        </div>
+        <SettingsForm
+          initialWebhookUrl={userData?.discord_webhook_url ?? ""}
+        />
       </div>
     </div>
   );
