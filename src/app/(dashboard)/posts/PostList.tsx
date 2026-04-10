@@ -177,25 +177,25 @@ export default function PostList({
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.1)' }}>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 日時
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 アカウント
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 サイクル
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 タイトル
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 ステータス
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 URL
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+              <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 操作
               </th>
             </tr>
@@ -206,7 +206,7 @@ export default function PostList({
                 <td
                   colSpan={7}
                   className="px-4 py-12 text-center"
-                  style={{ color: 'rgba(38, 37, 30, 0.4)' }}
+                  style={{ color: 'rgba(38, 37, 30, 0.62)' }}
                 >
                   投稿がありません
                 </td>
@@ -217,13 +217,13 @@ export default function PostList({
                   key={post.id}
                   style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.06)' }}
                 >
-                  <td className="whitespace-nowrap px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+                  <td className="whitespace-nowrap px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                     {new Date(post.created_at).toLocaleDateString("ja-JP")}
                   </td>
                   <td className="px-4 py-3" style={{ color: '#26251e' }}>
                     {accountName(post.account_id)}
                   </td>
-                  <td className="px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+                  <td className="px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                     {cycleLabels[post.cycle]}
                   </td>
                   <td className="max-w-[200px] truncate px-4 py-3 font-medium" style={{ color: '#26251e' }}>
@@ -252,9 +252,9 @@ export default function PostList({
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-sm transition-colors"
-                        style={{ color: '#f54e00' }}
+                        style={{ color: '#d94400' }}
                         onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = '#f54e00'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = '#d94400'; }}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                         note
@@ -269,7 +269,7 @@ export default function PostList({
                         style={{
                           borderRadius: '9999px',
                           background: 'rgba(245, 78, 0, 0.08)',
-                          color: '#f54e00',
+                          color: '#d94400',
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.background = 'rgba(245, 78, 0, 0.15)';
@@ -293,7 +293,7 @@ export default function PostList({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+          <p className="text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
             全 {total} 件中 {page * PER_PAGE + 1} -{" "}
             {Math.min((page + 1) * PER_PAGE, total)} 件
           </p>
@@ -302,9 +302,9 @@ export default function PostList({
               onClick={() => fetchPosts(page - 1)}
               disabled={page === 0 || loading}
               className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
-              style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+              style={{ color: 'rgba(38, 37, 30, 0.72)' }}
               onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.color = '#26251e'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.72)'; }}
             >
               <ChevronLeft className="h-4 w-4" />
               前へ
@@ -313,9 +313,9 @@ export default function PostList({
               onClick={() => fetchPosts(page + 1)}
               disabled={page >= totalPages - 1 || loading}
               className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
-              style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+              style={{ color: 'rgba(38, 37, 30, 0.72)' }}
               onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.color = '#26251e'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.72)'; }}
             >
               次へ
               <ChevronRight className="h-4 w-4" />

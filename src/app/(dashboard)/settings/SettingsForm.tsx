@@ -80,6 +80,8 @@ export default function SettingsForm({
     <form onSubmit={handleSave} className="space-y-4">
       {message && (
         <div
+          role="alert"
+          aria-live="polite"
           className="flex items-center gap-2 rounded-lg p-3 text-sm"
           style={{
             background: message.type === "success"
@@ -97,7 +99,7 @@ export default function SettingsForm({
         <label
           className="mb-1.5 flex items-center gap-2"
           style={{
-            color: 'rgba(38, 37, 30, 0.55)',
+            color: 'rgba(38, 37, 30, 0.72)',
             fontSize: '0.75rem',
             fontWeight: 500,
             textTransform: 'uppercase' as const,
@@ -120,7 +122,7 @@ export default function SettingsForm({
             borderRadius: '8px',
           }}
         />
-        <p className="mt-1 text-xs" style={{ color: 'rgba(38, 37, 30, 0.4)' }}>
+        <p className="mt-1 text-xs" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>
           投稿の成功・失敗をDiscordに通知します
         </p>
       </div>
@@ -147,11 +149,11 @@ export default function SettingsForm({
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40"
           style={{
             background: 'transparent',
-            color: 'rgba(38, 37, 30, 0.55)',
+            color: 'rgba(38, 37, 30, 0.72)',
             border: '1px solid rgba(38, 37, 30, 0.1)',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = '#26251e'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.72)'; }}
         >
           <Send className="h-4 w-4" />
           {testing ? "送信中..." : "テスト送信"}

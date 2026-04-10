@@ -29,7 +29,7 @@ async def _scrape_mentions(page) -> list[dict]:
     """Scrape replies from the X notifications/mentions tab.
 
     Returns a list of dicts with keys:
-        tweet_id, reply_tweet_id, reply_text, author
+        original_tweet_id, reply_tweet_id, reply_text, author
     """
     replies: list[dict] = []
 
@@ -71,13 +71,13 @@ async def _scrape_mentions(page) -> list[dict]:
             time_link = article.locator('a[href*="/status/"] time').locator("..")
             link_href = await time_link.get_attribute("href", timeout=3000)
             reply_tweet_id = ""
-            tweet_id = ""
+            original_tweet_id = ""
             if link_href:
                 match = re.search(r"/status/(\d+)", link_href)
                 if match:
                     reply_tweet_id = match.group(1)
 
-            # Try to find the parent tweet_id from "replying to" context
+            # Try to find the original (parent) tweet_id from "replying to" context
             replying_to = article.locator('a[href*="/status/"]')
             replying_links = await replying_to.all()
             for link in replying_links:
@@ -85,12 +85,12 @@ async def _scrape_mentions(page) -> list[dict]:
                 if href and "/status/" in href:
                     match = re.search(r"/status/(\d+)", href)
                     if match and match.group(1) != reply_tweet_id:
-                        tweet_id = match.group(1)
+                        original_tweet_id = match.group(1)
                         break
 
             if reply_tweet_id and reply_text:
                 replies.append({
-                    "tweet_id": tweet_id,
+                    "original_tweet_id": original_tweet_id,
                     "reply_tweet_id": reply_tweet_id,
                     "reply_text": reply_text.strip(),
                     "author": author,
@@ -119,7 +119,7 @@ async def run(account: dict) -> list[dict]:
     Returns
     -------
     list[dict]
-        Each dict has keys: ``tweet_id``, ``reply_tweet_id``,
+        Each dict has keys: ``original_tweet_id``, ``reply_tweet_id``,
         ``reply_text``, ``author``.
     """
     username = account["x_username"]

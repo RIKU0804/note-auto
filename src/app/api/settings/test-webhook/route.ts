@@ -37,6 +37,22 @@ export async function POST() {
     );
   }
 
+  // Re-validate URL at fetch time to prevent SSRF even if a bad value
+  // was ever persisted.
+  try {
+    const u = new URL(userRow.discord_webhook_url);
+    if (u.protocol !== "https:") throw new Error();
+    if (u.hostname !== "discord.com" && u.hostname !== "discordapp.com")
+      throw new Error();
+    if (u.username || u.password) throw new Error();
+    if (!u.pathname.startsWith("/api/webhooks/")) throw new Error();
+  } catch {
+    return NextResponse.json(
+      { error: "無効なWebhook URLです" },
+      { status: 400 },
+    );
+  }
+
   // Build test embed (matches discord_notify.py format)
   const nowJST = new Date().toLocaleString("ja-JP", {
     timeZone: "Asia/Tokyo",
@@ -67,18 +83,18 @@ export async function POST() {
     });
 
     if (!resp.ok) {
-      const text = await resp.text();
+      // Do not leak upstream response body to the client.
       return NextResponse.json(
-        { error: `Discord API error ${resp.status}: ${text}` },
+        { error: "Webhookの送信に失敗しました" },
         { status: 502 },
       );
     }
 
     return NextResponse.json({ ok: true, message: "Test notification sent" });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+  } catch {
+    // Do not leak fetch error details (could contain internal URLs etc.)
     return NextResponse.json(
-      { error: `Failed to send webhook: ${message}` },
+      { error: "Webhookの送信に失敗しました" },
       { status: 502 },
     );
   }

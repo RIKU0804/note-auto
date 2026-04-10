@@ -9,7 +9,7 @@
   --color-surface-400: #e6e5e0;
   --color-surface-500: #e1e0db;
   --color-text-primary: #26251e;
-  --color-text-secondary: rgba(38, 37, 30, 0.55);
+  --color-text-secondary: rgba(38, 37, 30, 0.72);
   --color-accent: #f54e00;
   --color-error: #cf2d56;
   --color-success: #1f8a65;
@@ -27,4 +27,14 @@ body {
 ::selection {
   background: rgba(245, 78, 0, 0.15);
   color: var(--color-text-primary);
+}
+
+*:focus-visible {
+  outline: 2px solid #26251e;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #26251e;
+  outline-offset: 2px;
 }

@@ -107,23 +107,26 @@ def set_account_active(account_id: str, is_active: bool) -> None:
 def save_research(
     user_id: str, account_id: str, cycle: str, tweets: list[dict]
 ) -> None:
-    """Save scraped tweet data to research table (upsert by tweet_id)."""
+    """Save scraped tweet data to research table (upsert by user_id+tweet_id)."""
     try:
+        now_iso = datetime.now(timezone.utc).isoformat()
         rows = [
             {
                 "user_id": user_id,
                 "account_id": account_id,
                 "cycle": cycle,
-                "tweet_id": t["tweet_id"],
-                "author": t.get("author"),
-                "content": t.get("content"),
-                "metrics": t.get("metrics"),
-                "scraped_at": datetime.now(timezone.utc).isoformat(),
+                "tweet_id": t.get("tweet_id"),
+                "tweet_text": t.get("tweet_text", t.get("content", "")),
+                "likes": int(t.get("likes", 0) or 0),
+                "retweets": int(t.get("retweets", 0) or 0),
+                "collected_at": now_iso,
             }
             for t in tweets
         ]
+        if not rows:
+            return
         supabase.table("research").upsert(
-            rows, on_conflict="tweet_id"
+            rows, on_conflict="user_id,tweet_id"
         ).execute()
         logger.info(
             f"Saved {len(rows)} research tweets for account {account_id}, cycle {cycle}"
@@ -142,10 +145,12 @@ def save_post(user_id: str, account_id: str, post: dict) -> str:
         row = {
             "user_id": user_id,
             "account_id": account_id,
-            "content": post.get("content"),
-            "media_urls": post.get("media_urls"),
+            "cycle": post.get("cycle", ""),
+            "title": post.get("title", ""),
+            "content_free": post.get("content_free", ""),
+            "content_paid": post.get("content_paid", ""),
+            "note_price": int(post.get("note_price", 300) or 300),
             "status": "queued",
-            "created_at": datetime.now(timezone.utc).isoformat(),
         }
         resp = supabase.table("posts").insert(row).execute()
         post_id = resp.data[0]["id"]
@@ -157,11 +162,15 @@ def save_post(user_id: str, account_id: str, post: dict) -> str:
 
 
 def get_queued_post(account_id: str) -> dict | None:
-    """Get the next queued post for an account."""
+    """Get the next queued post for an account.
+
+    Returns all columns the note_poster needs: id, title, content_free,
+    content_paid, note_price, cycle.
+    """
     try:
         resp = (
             supabase.table("posts")
-            .select("*")
+            .select("id,user_id,account_id,cycle,title,content_free,content_paid,note_price,status,created_at")
             .eq("account_id", account_id)
             .eq("status", "queued")
             .order("created_at")
@@ -181,15 +190,21 @@ def update_post_status(
     x_tweet_id: str = None,
     error_message: str = None,
 ) -> None:
-    """Update post status after posting attempt."""
+    """Update post status after posting attempt.
+
+    Only touches columns that exist in the schema: status, note_url,
+    x_tweet_id, error_message, posted_at.
+    """
     try:
-        updates: dict = {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}
+        updates: dict = {"status": status}
         if note_url is not None:
             updates["note_url"] = note_url
         if x_tweet_id is not None:
             updates["x_tweet_id"] = x_tweet_id
         if error_message is not None:
             updates["error_message"] = error_message
+        if status == "posted":
+            updates["posted_at"] = datetime.now(timezone.utc).isoformat()
 
         supabase.table("posts").update(updates).eq("id", post_id).execute()
         logger.info(f"Post {post_id} status updated to '{status}'")
@@ -238,23 +253,21 @@ def get_unresponded_replies(account_id: str) -> list[dict]:
 
 
 def save_reply(user_id: str, account_id: str, reply: dict) -> None:
-    """Save a detected reply (upsert by reply_tweet_id)."""
+    """Save a detected reply (upsert by user_id+reply_tweet_id)."""
     try:
         row = {
             "user_id": user_id,
             "account_id": account_id,
-            "reply_tweet_id": reply["reply_tweet_id"],
-            "author": reply.get("author"),
-            "content": reply.get("content"),
-            "parent_tweet_id": reply.get("parent_tweet_id"),
-            "detected_at": datetime.now(timezone.utc).isoformat(),
-            "is_spam": False,
+            "reply_tweet_id": reply.get("reply_tweet_id"),
+            "original_tweet_id": reply.get("original_tweet_id", ""),
+            "reply_text": reply.get("reply_text", reply.get("content", "")),
+            "is_spam": bool(reply.get("is_spam", False)),
         }
         supabase.table("replies").upsert(
-            row, on_conflict="reply_tweet_id"
+            row, on_conflict="user_id,reply_tweet_id"
         ).execute()
         logger.info(
-            f"Saved reply {reply['reply_tweet_id']} for account {account_id}"
+            f"Saved reply {reply.get('reply_tweet_id')} for account {account_id}"
         )
     except Exception as e:
         logger.error(f"Failed to save reply for account {account_id}: {e}")
@@ -342,7 +355,7 @@ def get_user_by_discord_id(discord_id: str) -> dict | None:
         resp = (
             supabase.table("users")
             .select("*")
-            .eq("discord_id", discord_id)
+            .eq("discord_user_id", discord_id)
             .single()
             .execute()
         )

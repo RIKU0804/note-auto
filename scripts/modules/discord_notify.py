@@ -26,6 +26,11 @@ async def _send_webhook(webhook_url: str, embed: dict):
         logger.error(f"Discord webhook HTTP error {e.response.status_code}: {e.response.text}")
     except httpx.RequestError as e:
         logger.error(f"Discord webhook request failed: {e}")
+    except Exception as e:
+        # Catch-all for JSON serialization errors, unexpected SSL issues,
+        # etc. Notifications are best-effort — they must never crash the
+        # worker.
+        logger.error(f"Discord webhook unexpected error: {e}")
 
 
 def _now_jst_str() -> str:

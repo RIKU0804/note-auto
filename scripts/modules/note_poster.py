@@ -16,7 +16,6 @@ from playwright.async_api import Browser, Page, async_playwright
 
 NOTE_POST_CONFIG = {
     "default_price": 300,
-    "free_preview_ratio": 0.2,
     "timeout_ms": 30000,
 }
 
@@ -69,25 +68,15 @@ async def login(page: Page, email: str, password: str) -> None:
 # Article publishing
 # ---------------------------------------------------------------------------
 
-def _split_content(content: str, free_ratio: float) -> tuple[str, str]:
-    """Split article content into free preview and paid portions.
-
-    Returns (free_part, paid_part).
-    """
-    lines = content.split("\n")
-    split_idx = max(1, int(len(lines) * free_ratio))
-    free_part = "\n".join(lines[:split_idx])
-    paid_part = "\n".join(lines[split_idx:])
-    return free_part, paid_part
-
-
 async def _fill_article(page: Page, post: dict) -> None:
-    """Fill in the article editor with title, free preview, paywall, and paid content."""
-    title = post.get("title", "")
-    content = post.get("content", "")
-    free_ratio = NOTE_POST_CONFIG["free_preview_ratio"]
+    """Fill in the article editor with title, free preview, paywall, and paid content.
 
-    free_part, paid_part = _split_content(content, free_ratio)
+    Uses the pre-split ``content_free`` / ``content_paid`` fields produced
+    by ``generator.run``.
+    """
+    title = post.get("title", "")
+    free_part = post.get("content_free", "") or ""
+    paid_part = post.get("content_paid", "") or ""
 
     # Fill title
     logger.debug(f"Setting article title: {title[:50]}...")
@@ -190,7 +179,7 @@ async def run(account: dict, post: dict) -> str:
     account : dict
         Must contain ``note_email`` and ``note_password`` (decrypted).
     post : dict
-        Must contain ``title`` and ``content``.
+        Must contain ``title``, ``content_free``, ``content_paid``.
         Optional: ``note_price`` (default 300 yen).
 
     Returns

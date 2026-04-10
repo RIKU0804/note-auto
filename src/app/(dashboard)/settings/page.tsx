@@ -29,7 +29,7 @@ export default async function SettingsPage() {
         >
           設定
         </h1>
-        <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+        <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
           アカウント設定と通知の管理
         </p>
       </div>
@@ -80,7 +80,7 @@ export default async function SettingsPage() {
                 <p className="mt-1 text-lg font-bold" style={{ color: '#26251e' }}>
                   {p.price}
                 </p>
-                <p className="mt-1 text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+                <p className="mt-1 text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                   最大 {p.max_accounts} アカウント
                 </p>
               </div>

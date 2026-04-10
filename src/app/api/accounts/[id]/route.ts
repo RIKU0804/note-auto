@@ -56,6 +56,7 @@ export async function PUT(
     .from("accounts")
     .update(updates)
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 
@@ -94,6 +95,7 @@ export async function DELETE(
     .from("accounts")
     .update({ is_active: false })
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 

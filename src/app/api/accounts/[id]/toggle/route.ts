@@ -19,11 +19,12 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch the current state
+  // Fetch the current state (scoped to owner)
   const { data: account, error: fetchError } = await supabase
     .from("accounts")
     .select("id, is_active")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (fetchError || !account) {
@@ -33,15 +34,24 @@ export async function POST(
     );
   }
 
-  // Toggle
+  // Toggle with optimistic lock — the extra .eq("is_active", account.is_active)
+  // guard ensures two concurrent requests cannot both flip to the same value.
   const { data, error } = await supabase
     .from("accounts")
     .update({ is_active: !account.is_active })
     .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("is_active", account.is_active)
     .select()
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return NextResponse.json(
+        { error: "Account state changed concurrently, please retry" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

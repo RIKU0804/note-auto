@@ -47,6 +47,7 @@ export default function DashboardLayout({
 
       {/* Sidebar */}
       <aside
+        id="primary-sidebar"
         className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -68,8 +69,10 @@ export default function DashboardLayout({
             note-auto
           </Link>
           <button
+            type="button"
+            aria-label="サイドバーを閉じる"
             className="rounded-lg p-1 lg:hidden"
-            style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+            style={{ color: 'rgba(38, 37, 30, 0.72)' }}
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -91,7 +94,7 @@ export default function DashboardLayout({
                 className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors"
                 style={{
                   borderRadius: '9999px',
-                  color: isActive ? '#26251e' : 'rgba(38, 37, 30, 0.55)',
+                  color: isActive ? '#26251e' : 'rgba(38, 37, 30, 0.72)',
                   background: isActive ? '#ebeae5' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
@@ -102,7 +105,7 @@ export default function DashboardLayout({
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) {
-                    e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)';
+                    e.currentTarget.style.color = 'rgba(38, 37, 30, 0.72)';
                     e.currentTarget.style.background = 'transparent';
                   }
                 }}
@@ -121,13 +124,13 @@ export default function DashboardLayout({
             className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors"
             style={{
               borderRadius: '9999px',
-              color: 'rgba(38, 37, 30, 0.55)',
+              color: 'rgba(38, 37, 30, 0.72)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = '#cf2d56';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)';
+              e.currentTarget.style.color = 'rgba(38, 37, 30, 0.72)';
             }}
           >
             <LogOut className="h-5 w-5" />
@@ -147,8 +150,12 @@ export default function DashboardLayout({
           }}
         >
           <button
+            type="button"
+            aria-label="メニューを開く"
+            aria-expanded={sidebarOpen}
+            aria-controls="primary-sidebar"
             className="rounded-lg p-2"
-            style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+            style={{ color: 'rgba(38, 37, 30, 0.72)' }}
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" />

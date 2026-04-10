@@ -52,15 +52,15 @@ export default function SignupPage() {
           >
             確認メールを送信しました
           </h1>
-          <p className="text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+          <p className="text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
             メールに記載されたリンクをクリックして、アカウントを有効化してください。
           </p>
           <Link
             href="/login"
             className="inline-block text-sm font-medium transition-colors"
-            style={{ color: '#f54e00' }}
+            style={{ color: '#d94400' }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#f54e00'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#d94400'; }}
           >
             ログインページへ戻る
           </Link>
@@ -89,7 +89,7 @@ export default function SignupPage() {
           >
             note-auto
           </h1>
-          <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+          <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
             新規アカウント作成
           </p>
         </div>
@@ -97,6 +97,8 @@ export default function SignupPage() {
         <form onSubmit={handleSignup} className="space-y-4">
           {error && (
             <div
+              role="alert"
+              aria-live="polite"
               className="rounded-lg p-3 text-sm"
               style={{ background: 'rgba(207, 45, 86, 0.08)', color: '#cf2d56' }}
             >
@@ -109,7 +111,7 @@ export default function SignupPage() {
               htmlFor="email"
               className="mb-1.5 block"
               style={{
-                color: 'rgba(38, 37, 30, 0.55)',
+                color: 'rgba(38, 37, 30, 0.72)',
                 fontSize: '0.75rem',
                 fontWeight: 500,
                 textTransform: 'uppercase' as const,
@@ -122,6 +124,7 @@ export default function SignupPage() {
               id="email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 text-sm outline-none transition-colors"
@@ -140,7 +143,7 @@ export default function SignupPage() {
               htmlFor="password"
               className="mb-1.5 block"
               style={{
-                color: 'rgba(38, 37, 30, 0.55)',
+                color: 'rgba(38, 37, 30, 0.72)',
                 fontSize: '0.75rem',
                 fontWeight: 500,
                 textTransform: 'uppercase' as const,
@@ -153,6 +156,7 @@ export default function SignupPage() {
               id="password"
               type="password"
               required
+              autoComplete="new-password"
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -182,14 +186,14 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+        <p className="text-center text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
           すでにアカウントをお持ちの方は{" "}
           <Link
             href="/login"
             className="font-medium transition-colors"
-            style={{ color: '#f54e00' }}
+            style={{ color: '#d94400' }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#f54e00'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#d94400'; }}
           >
             ログイン
           </Link>

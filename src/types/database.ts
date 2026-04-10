@@ -47,11 +47,14 @@ export type Log = {
   created_at: string;
 };
 
+export type Cycle = "morning" | "noon" | "night";
+
 export type PlanLimits = {
   plan: User["plan"];
   max_accounts: number;
   label: string;
   price: string;
+  cycles: readonly Cycle[];
 };
 
 export const PLAN_LIMITS: Record<User["plan"], PlanLimits> = {
@@ -60,18 +63,21 @@ export const PLAN_LIMITS: Record<User["plan"], PlanLimits> = {
     max_accounts: 1,
     label: "Free",
     price: "¥0/月",
+    cycles: ["morning"] as const,
   },
   pro: {
     plan: "pro",
     max_accounts: 5,
     label: "Pro",
     price: "¥2,980/月",
+    cycles: ["morning", "noon", "night"] as const,
   },
   business: {
     plan: "business",
     max_accounts: 20,
     label: "Business",
     price: "¥9,800/月",
+    cycles: ["morning", "noon", "night"] as const,
   },
 };
 

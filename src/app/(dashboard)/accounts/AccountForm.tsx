@@ -13,9 +13,10 @@ const inputStyle = {
 };
 
 const inputFocusClass = "w-full px-3 py-2 text-sm outline-none transition-colors focus:border-[rgba(38,37,30,0.3)]";
+const inputClasses = inputFocusClass;
 
 const labelStyle = {
-  color: 'rgba(38, 37, 30, 0.55)',
+  color: 'rgba(38, 37, 30, 0.72)',
   fontSize: '0.75rem',
   fontWeight: 500 as const,
   textTransform: 'uppercase' as const,
@@ -89,6 +90,8 @@ export default function AccountForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
         <div
+          role="alert"
+          aria-live="polite"
           className="rounded-lg p-3 text-sm"
           style={{ background: 'rgba(207, 45, 86, 0.08)', color: '#cf2d56' }}
         >
@@ -115,15 +118,17 @@ export default function AccountForm({
         <label className="mb-1.5 block" style={labelStyle}>
           ジャンル
         </label>
-        <input
-          type="text"
-          required
+        <select
           value={genreId}
           onChange={(e) => setGenreId(e.target.value)}
-          placeholder="例: ライフスタイル、副業、健康"
-          className={inputFocusClass}
+          required
+          className={inputClasses}
           style={inputStyle}
-        />
+        >
+          {genres.map((g) => (
+            <option key={g.id} value={g.id}>{g.label}</option>
+          ))}
+        </select>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -134,6 +139,7 @@ export default function AccountForm({
           <input
             type="email"
             required
+            autoComplete="off"
             value={noteEmail}
             onChange={(e) => setNoteEmail(e.target.value)}
             placeholder="user@example.com"
@@ -147,6 +153,7 @@ export default function AccountForm({
           </label>
           <input
             type="password"
+            autoComplete="new-password"
             value={notePassword}
             onChange={(e) => setNotePassword(e.target.value)}
             placeholder={account ? "変更しない場合は空欄" : "--------"}
@@ -177,6 +184,7 @@ export default function AccountForm({
           </label>
           <input
             type="password"
+            autoComplete="new-password"
             value={xPassword}
             onChange={(e) => setXPassword(e.target.value)}
             placeholder={account ? "変更しない場合は空欄" : "--------"}
@@ -208,11 +216,11 @@ export default function AccountForm({
           className="rounded-lg px-4 py-2 text-sm font-medium transition-colors"
           style={{
             background: 'transparent',
-            color: 'rgba(38, 37, 30, 0.55)',
+            color: 'rgba(38, 37, 30, 0.72)',
             border: '1px solid rgba(38, 37, 30, 0.1)',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = '#26251e'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.55)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(38, 37, 30, 0.72)'; }}
         >
           キャンセル
         </button>

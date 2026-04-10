@@ -18,6 +18,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("accounts")
     .select("*")
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -66,6 +67,42 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // --- input validation ---
+  for (const field of REQUIRED_FIELDS) {
+    if (typeof body[field] !== "string") {
+      return NextResponse.json(
+        { error: `Field "${field}" must be a string` },
+        { status: 400 },
+      );
+    }
+  }
+  const name = body.name as string;
+  const genreId = body.genre_id as string;
+  if (name.length === 0 || name.length > 100) {
+    return NextResponse.json(
+      { error: "name must be between 1 and 100 characters" },
+      { status: 400 },
+    );
+  }
+  if (genreId.length === 0 || genreId.length > 50) {
+    return NextResponse.json(
+      { error: "genre_id must be between 1 and 50 characters" },
+      { status: 400 },
+    );
+  }
+  if (
+    body.post_interval_minutes !== undefined &&
+    (typeof body.post_interval_minutes !== "number" ||
+      !Number.isFinite(body.post_interval_minutes) ||
+      body.post_interval_minutes < 1 ||
+      body.post_interval_minutes > 1440)
+  ) {
+    return NextResponse.json(
+      { error: "post_interval_minutes must be a number between 1 and 1440" },
+      { status: 400 },
+    );
+  }
+
   // --- check plan limit ---
   const { data: userRow, error: userError } = await supabase
     .from("users")
@@ -95,7 +132,8 @@ export async function POST(request: NextRequest) {
 
   const { count, error: countError } = await supabase
     .from("accounts")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
 
   if (countError) {
     return NextResponse.json(

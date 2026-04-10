@@ -60,20 +60,28 @@ export async function PUT(request: NextRequest) {
   const updates: Record<string, unknown> = {};
 
   if (body.discord_webhook_url !== undefined) {
-    const url = body.discord_webhook_url;
-    if (url !== null && typeof url === "string" && url.length > 0) {
-      // Basic Discord webhook URL validation
-      if (
-        !url.startsWith("https://discord.com/api/webhooks/") &&
-        !url.startsWith("https://discordapp.com/api/webhooks/")
-      ) {
+    const webhookUrl = body.discord_webhook_url;
+    if (
+      webhookUrl !== null &&
+      typeof webhookUrl === "string" &&
+      webhookUrl.length > 0
+    ) {
+      try {
+        const u = new URL(webhookUrl);
+        if (u.protocol !== "https:") throw new Error();
+        if (u.hostname !== "discord.com" && u.hostname !== "discordapp.com")
+          throw new Error();
+        if (u.username || u.password) throw new Error();
+        if (!u.pathname.startsWith("/api/webhooks/")) throw new Error();
+      } catch {
         return NextResponse.json(
-          { error: "Invalid Discord webhook URL" },
+          { error: "無効なWebhook URLです" },
           { status: 400 },
         );
       }
     }
-    updates.discord_webhook_url = url === "" ? null : url;
+    updates.discord_webhook_url =
+      webhookUrl === "" || webhookUrl === null ? null : webhookUrl;
   }
 
   if (Object.keys(updates).length === 0) {

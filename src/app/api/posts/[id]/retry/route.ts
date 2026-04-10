@@ -19,11 +19,12 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fetch the post to verify it is in "failed" status
+  // Fetch the post to verify it is in "failed" status (scoped to owner)
   const { data: post, error: fetchError } = await supabase
     .from("posts")
     .select("id, status")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (fetchError || !post) {
@@ -41,6 +42,7 @@ export async function POST(
     .from("posts")
     .update({ status: "queued", error_message: null })
     .eq("id", id)
+    .eq("user_id", user.id)
     .select()
     .single();
 

@@ -23,10 +23,16 @@ export default async function AccountsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1
+            className="text-2xl font-bold"
+            style={{ color: '#26251e', letterSpacing: '-0.03em' }}
+          >
             アカウント管理
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p
+            className="mt-1 text-sm"
+            style={{ color: 'rgba(38, 37, 30, 0.72)' }}
+          >
             X / note アカウントの追加・編集・管理
           </p>
         </div>

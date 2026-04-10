@@ -53,7 +53,7 @@ export default function LoginPage() {
           >
             note-auto
           </h1>
-          <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+          <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
             アカウントにログイン
           </p>
         </div>
@@ -61,6 +61,8 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           {error && (
             <div
+              role="alert"
+              aria-live="polite"
               className="rounded-lg p-3 text-sm"
               style={{ background: 'rgba(207, 45, 86, 0.08)', color: '#cf2d56' }}
             >
@@ -73,7 +75,7 @@ export default function LoginPage() {
               htmlFor="email"
               className="mb-1.5 block"
               style={{
-                color: 'rgba(38, 37, 30, 0.55)',
+                color: 'rgba(38, 37, 30, 0.72)',
                 fontSize: '0.75rem',
                 fontWeight: 500,
                 textTransform: 'uppercase' as const,
@@ -86,6 +88,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               required
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 text-sm outline-none transition-colors"
@@ -104,7 +107,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="mb-1.5 block"
               style={{
-                color: 'rgba(38, 37, 30, 0.55)',
+                color: 'rgba(38, 37, 30, 0.72)',
                 fontSize: '0.75rem',
                 fontWeight: 500,
                 textTransform: 'uppercase' as const,
@@ -117,6 +120,7 @@ export default function LoginPage() {
               id="password"
               type="password"
               required
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 text-sm outline-none transition-colors"
@@ -145,14 +149,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+        <p className="text-center text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
           アカウントをお持ちでない方は{" "}
           <Link
             href="/signup"
             className="font-medium transition-colors"
-            style={{ color: '#f54e00' }}
+            style={{ color: '#d94400' }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#f54e00'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#d94400'; }}
           >
             新規登録
           </Link>

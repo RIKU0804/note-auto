@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@supabase/supabase-js";
+import crypto from "crypto";
+import { PLAN_LIMITS, type Cycle } from "@/types/database";
 
 // ---------------------------------------------------------------------------
-// POST /api/cron/cycle — Vercel Cron-compatible cycle trigger
+// GET /api/cron/cycle — Vercel Cron-compatible cycle trigger
 //
-// This endpoint uses the service-role key (not the anon key) so it can
-// iterate over all active users regardless of RLS.  It is protected by
-// the CRON_SECRET header.
+// Vercel Cron always sends GET requests with the CRON_SECRET as a Bearer
+// token in the Authorization header.  This endpoint uses the service-role
+// key (not the anon key) so it can iterate over all active users
+// regardless of RLS.
 // ---------------------------------------------------------------------------
 
-function getCycleForHour(hour: number): string | null {
+function getCycleForHour(hour: number): Cycle | null {
   // JST-based cycle mapping
   if (hour >= 6 && hour < 10) return "morning";
   if (hour >= 11 && hour < 14) return "noon";
@@ -17,8 +20,12 @@ function getCycleForHour(hour: number): string | null {
   return null;
 }
 
-export async function POST(request: NextRequest) {
-  // --- Verify CRON_SECRET ---
+function isCycle(value: string | null): value is Cycle {
+  return value === "morning" || value === "noon" || value === "night";
+}
+
+async function handle(request: NextRequest) {
+  // --- Verify CRON_SECRET (timing-safe) ---
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     return NextResponse.json(
@@ -28,18 +35,37 @@ export async function POST(request: NextRequest) {
   }
 
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  const expected = Buffer.from(cronSecret);
+  const provided = Buffer.from(authHeader?.replace("Bearer ", "") ?? "");
+  if (
+    expected.length !== provided.length ||
+    !crypto.timingSafeEqual(expected, provided)
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // --- Determine current cycle ---
-  const jstHour = new Date().toLocaleString("en-US", {
+  // Query param is the source of truth; fall back to JST-hour derivation.
+  const cycleParam = request.nextUrl.searchParams.get("cycle");
+  const jstHourStr = new Date().toLocaleString("en-US", {
     timeZone: "Asia/Tokyo",
     hour: "numeric",
     hour12: false,
   });
-  const hour = parseInt(jstHour, 10);
-  const cycle = getCycleForHour(hour);
+  const hour = parseInt(jstHourStr, 10);
+
+  let cycle: Cycle | null;
+  if (cycleParam !== null) {
+    if (!isCycle(cycleParam)) {
+      return NextResponse.json(
+        { error: `Invalid cycle parameter: ${cycleParam}` },
+        { status: 400 },
+      );
+    }
+    cycle = cycleParam;
+  } else {
+    cycle = getCycleForHour(hour);
+  }
 
   if (!cycle) {
     return NextResponse.json({
@@ -78,11 +104,25 @@ export async function POST(request: NextRequest) {
   const results: Array<{
     user_id: string;
     accounts_triggered: number;
+    skipped?: string;
     error?: string;
   }> = [];
 
   for (const user of users ?? []) {
     try {
+      // Respect plan cycle limits — skip users whose plan does not
+      // include the requested cycle (e.g. free plan = morning only).
+      const planKey = user.plan as keyof typeof PLAN_LIMITS;
+      const planLimits = PLAN_LIMITS[planKey];
+      if (!planLimits || !planLimits.cycles.includes(cycle)) {
+        results.push({
+          user_id: user.id,
+          accounts_triggered: 0,
+          skipped: `plan "${user.plan}" does not include cycle "${cycle}"`,
+        });
+        continue;
+      }
+
       // Fetch active accounts for this user
       const { data: accounts, error: accError } = await supabase
         .from("accounts")
@@ -104,14 +144,17 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Create queued posts for each active account
+      // Create queued posts for each active account.
+      // The schema requires title/content_free/content_paid to be NOT NULL,
+      // so we write placeholders here and let the worker overwrite them
+      // once generation completes.
       const posts = accounts.map((account) => ({
         user_id: user.id,
         account_id: account.id,
         cycle,
-        title: `[${cycle}] ${account.name}`,
-        content_free: "", // Will be populated by the worker
-        content_paid: "", // Will be populated by the worker
+        title: "生成中",
+        content_free: "(生成待ち)",
+        content_paid: "(生成待ち)",
         status: "queued",
       }));
 
@@ -181,4 +224,12 @@ export async function POST(request: NextRequest) {
     processed: results.length,
     results,
   });
+}
+
+export async function GET(request: NextRequest) {
+  return handle(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handle(request);
 }

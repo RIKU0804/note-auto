@@ -26,7 +26,7 @@ function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "おはようございます";
   if (hour < 18) return "こんにちは";
-  return "お疲れさまです";
+  return "こんばんは";
 }
 
 export default async function DashboardPage() {
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
         >
           {getGreeting()}
         </h1>
-        <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+        <p className="mt-2 text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
           本日の投稿状況と統計情報
         </p>
       </div>
@@ -106,12 +106,12 @@ export default async function DashboardPage() {
           className="rounded-lg p-6"
           style={{ background: '#e6e5e0', border: '1px solid rgba(38, 37, 30, 0.1)' }}
         >
-          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
             本日の投稿数
           </p>
           <p className="mt-2 text-3xl font-bold" style={{ color: '#26251e', letterSpacing: '-0.02em' }}>
             {totalPosted}
-            <span className="ml-1 text-sm font-normal" style={{ color: 'rgba(38, 37, 30, 0.4)' }}>
+            <span className="ml-1 text-sm font-normal" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>
               / {accounts.length * 3}
             </span>
           </p>
@@ -121,12 +121,12 @@ export default async function DashboardPage() {
           className="rounded-lg p-6"
           style={{ background: '#e6e5e0', border: '1px solid rgba(38, 37, 30, 0.1)' }}
         >
-          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
             成功率
           </p>
           <p className="mt-2 text-3xl font-bold" style={{ color: '#26251e', letterSpacing: '-0.02em' }}>
             {successRate}
-            <span className="text-sm font-normal" style={{ color: 'rgba(38, 37, 30, 0.4)' }}>%</span>
+            <span className="text-sm font-normal" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>%</span>
           </p>
         </div>
 
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
           className="rounded-lg p-6"
           style={{ background: '#e6e5e0', border: '1px solid rgba(38, 37, 30, 0.1)' }}
         >
-          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.55)' }}>
+          <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
             総アカウント数
           </p>
           <p className="mt-2 text-3xl font-bold" style={{ color: '#26251e', letterSpacing: '-0.02em' }}>
@@ -158,16 +158,18 @@ export default async function DashboardPage() {
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.1)' }}>
                 <th
+                  scope="col"
                   className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                  style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+                  style={{ color: 'rgba(38, 37, 30, 0.72)' }}
                 >
                   アカウント
                 </th>
                 {cycles.map((c) => (
                   <th
                     key={c}
+                    scope="col"
                     className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider"
-                    style={{ color: 'rgba(38, 37, 30, 0.55)' }}
+                    style={{ color: 'rgba(38, 37, 30, 0.72)' }}
                   >
                     {cycleLabels[c]}
                   </th>
@@ -180,7 +182,7 @@ export default async function DashboardPage() {
                   <td
                     colSpan={4}
                     className="px-6 py-8 text-center text-sm"
-                    style={{ color: 'rgba(38, 37, 30, 0.4)' }}
+                    style={{ color: 'rgba(38, 37, 30, 0.62)' }}
                   >
                     アカウントがありません
                   </td>
@@ -193,7 +195,7 @@ export default async function DashboardPage() {
                   >
                     <td className="px-6 py-3 font-medium" style={{ color: '#26251e' }}>
                       {account.name}
-                      <span className="ml-2 text-xs" style={{ color: 'rgba(38, 37, 30, 0.4)' }}>
+                      <span className="ml-2 text-xs" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>
                         @{account.x_username}
                       </span>
                     </td>
@@ -224,7 +226,7 @@ export default async function DashboardPage() {
         </div>
         <div>
           {recentLogs.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm" style={{ color: 'rgba(38, 37, 30, 0.4)' }}>
+            <div className="px-6 py-8 text-center text-sm" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>
               アクティビティはありません
             </div>
           ) : (
@@ -254,7 +256,7 @@ export default async function DashboardPage() {
                   <p className="text-sm" style={{ color: '#26251e' }}>
                     {log.message}
                   </p>
-                  <p className="mt-0.5 text-xs" style={{ color: 'rgba(38, 37, 30, 0.4)' }}>
+                  <p className="mt-0.5 text-xs" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>
                     {new Date(log.created_at).toLocaleString("ja-JP")}
                   </p>
                 </div>
