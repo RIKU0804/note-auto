@@ -1,117 +1,83 @@
+"""Discord Webhook notification module.
+
+Each user has their own webhook URL stored in Supabase (users.discord_webhook_url).
 """
-Discord Webhook notification module.
-Each user has their own webhook URL stored in Supabase (user["discord_webhook_url"]).
-"""
+
+from datetime import datetime, timezone, timedelta
 
 import httpx
 from loguru import logger
-from datetime import datetime, timezone, timedelta
 
 JST = timezone(timedelta(hours=9))
 
 
-async def _send_webhook(webhook_url: str, embed: dict):
-    """Send an embed to a Discord webhook URL."""
+async def _send(webhook_url: str, embed: dict) -> None:
     if not webhook_url:
         logger.warning("No Discord webhook URL configured — skipping notification")
         return
-
-    payload = {"embeds": [embed]}
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(webhook_url, json=payload)
+            resp = await client.post(webhook_url, json={"embeds": [embed]})
             resp.raise_for_status()
-            logger.debug("Discord webhook sent successfully")
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Discord webhook HTTP error {e.response.status_code}: {e.response.text}")
-    except httpx.RequestError as e:
-        logger.error(f"Discord webhook request failed: {e}")
     except Exception as e:
-        # Catch-all for JSON serialization errors, unexpected SSL issues,
-        # etc. Notifications are best-effort — they must never crash the
-        # worker.
-        logger.error(f"Discord webhook unexpected error: {e}")
+        logger.error("Discord webhook failed: {}", e)
 
 
-def _now_jst_str() -> str:
-    return datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S JST")
+def _jst_now() -> str:
+    return datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
 
 
-async def cycle_start(user: dict, cycle: str, account_count: int):
+def _footer() -> dict:
+    return {"text": _jst_now()}
+
+
+def _ts() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+async def cycle_start(user: dict, cycle: str, account_count: int) -> None:
     """Notify that a cycle is starting."""
-    embed = {
+    await _send(user.get("discord_webhook_url"), {
         "title": f"サイクル開始: {cycle}",
-        "description": (
-            f"対象アカウント数: **{account_count}**\n"
-            f"ユーザー: {user.get('email', user.get('id', 'unknown'))}"
-        ),
+        "description": f"対象アカウント数: **{account_count}**",
         "color": 0x3498DB,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "footer": {"text": _now_jst_str()},
-    }
-    await _send_webhook(user.get("discord_webhook_url"), embed)
+        "timestamp": _ts(),
+        "footer": _footer(),
+    })
 
 
-async def post_done(user: dict, account: dict, post: dict, note_url: str):
-    """Notify successful post."""
-    embed = {
+async def tweet_done(user: dict, account: dict, post: dict, tweet_url: str) -> None:
+    """Notify successful X post."""
+    tweet_preview = post.get("tweet_text", "")[:100]
+    if len(post.get("tweet_text", "")) > 100:
+        tweet_preview += "…"
+
+    desc = (
+        f"**アカウント**: @{account.get('x_username', account.get('name', 'unknown'))}\n"
+        f"**投稿内容**: {tweet_preview}"
+    )
+    if tweet_url:
+        desc += f"\n**URL**: {tweet_url}"
+
+    await _send(user.get("discord_webhook_url"), {
         "title": "投稿完了",
-        "description": (
-            f"**アカウント**: {account.get('name', 'unknown')}\n"
-            f"**タイトル**: {post.get('title', '(無題)')}\n"
-            f"**URL**: {note_url}\n"
-            f"**サイクル**: {post.get('cycle', '-')}"
-        ),
+        "description": desc,
         "color": 0x2ECC71,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "footer": {"text": _now_jst_str()},
-    }
-    await _send_webhook(user.get("discord_webhook_url"), embed)
+        "timestamp": _ts(),
+        "footer": _footer(),
+    })
 
 
-async def reply_done(user: dict, account: dict, count: int):
-    """Notify reply processing complete."""
-    embed = {
-        "title": "リプライ処理完了",
-        "description": (
-            f"**アカウント**: {account.get('name', 'unknown')}\n"
-            f"**処理件数**: {count}"
-        ),
-        "color": 0x9B59B6,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "footer": {"text": _now_jst_str()},
-    }
-    await _send_webhook(user.get("discord_webhook_url"), embed)
-
-
-async def error(user: dict, module: str, message: str, account: dict = None):
+async def error(user: dict, module: str, message: str, account: dict = None) -> None:
     """Notify an error occurred."""
     desc = f"**モジュール**: {module}\n**エラー**: {message}"
     if account:
         desc += f"\n**アカウント**: {account.get('name', 'unknown')}"
 
-    embed = {
+    await _send(user.get("discord_webhook_url"), {
         "title": "エラー発生",
         "description": desc,
         "color": 0xE74C3C,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "footer": {"text": _now_jst_str()},
-    }
-    await _send_webhook(user.get("discord_webhook_url"), embed)
-
-
-async def daily_summary(user: dict, stats: dict):
-    """Send daily summary."""
-    embed = {
-        "title": "日次サマリー",
-        "description": (
-            f"**総投稿数**: {stats.get('total_posts', 0)}\n"
-            f"**成功**: {stats.get('successful', 0)}\n"
-            f"**失敗**: {stats.get('failed', 0)}\n"
-            f"**リプライ処理数**: {stats.get('replies_processed', 0)}"
-        ),
-        "color": 0xF1C40F,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "footer": {"text": _now_jst_str()},
-    }
-    await _send_webhook(user.get("discord_webhook_url"), embed)
+        "timestamp": _ts(),
+        "footer": _footer(),
+    })

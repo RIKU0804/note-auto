@@ -1,17 +1,13 @@
 name: Night Cycle
 on:
   schedule:
-    - cron: '45 10 * * *'  # 19:45 JST (10:45 UTC)
+    - cron: '0 10 * * *'  # 19:00 JST (10:00 UTC)
   workflow_dispatch:
-    inputs:
-      accounts:
-        description: 'Account IDs (comma-separated, or "all")'
-        default: 'all'
 
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,6 +17,11 @@ jobs:
         run: |
           pip install -r scripts/requirements.txt
           playwright install chromium --with-deps
+      - name: Random delay (anti-freeze)
+        run: |
+          DELAY=$((RANDOM % 1800))
+          echo "Waiting ${DELAY}s ($(( DELAY / 60 )) min) before posting..."
+          sleep $DELAY
       - name: Run night cycle
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
