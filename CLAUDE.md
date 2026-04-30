@@ -1,5 +1,94 @@
 # CLAUDE.md -- Project Instructions
 
+## 🚀 初回セットアップ（新規導入時はここから）
+
+このプロジェクトを動かすには以下の4サービスのアカウントが必要です。
+Claude Code に「セットアップして」と伝えれば、以下の手順を一緒に進められます。
+
+### 必要なアカウント
+
+| サービス | 用途 | URL |
+|---------|------|-----|
+| GitHub | コード管理 + 自動実行 (Actions) | https://github.com |
+| Supabase | データベース | https://supabase.com |
+| Vercel | ダッシュボード公開 | https://vercel.com |
+| OpenRouter | AI API | https://openrouter.ai |
+
+---
+
+### Step 1 — リポジトリをフォーク
+
+1. このリポジトリを自分の GitHub アカウントに Fork する
+2. ローカルに clone する：
+   ```bash
+   git clone https://github.com/<あなたのユーザー名>/note-auto.git
+   cd note-auto
+   ```
+
+---
+
+### Step 2 — Supabase セットアップ
+
+1. https://supabase.com でプロジェクトを新規作成
+2. **SQL Editor** を開き `supabase/001_initial_schema.sql` の内容を貼り付けて実行
+3. **Project Settings → API** から以下をメモ：
+   - `Project URL`（例: `https://xxxx.supabase.co`）
+   - `service_role` キー（Secret欄にある長いJWT）
+
+---
+
+### Step 3 — OpenRouter セットアップ
+
+1. https://openrouter.ai でアカウント作成
+2. **Keys** ページで API キーを発行（`sk-or-v1-...`）
+3. 使用モデルを決める（デフォルト推奨: `anthropic/claude-3-haiku`）
+
+---
+
+### Step 4 — GitHub Secrets を設定
+
+フォークしたリポジトリの **Settings → Secrets and variables → Actions** で以下を追加：
+
+| Secret 名 | 値 |
+|---|---|
+| `SUPABASE_URL` | Step 2 の Project URL |
+| `SUPABASE_KEY` | Step 2 の service_role キー |
+| `OPENROUTER_API_KEY` | Step 3 の API キー |
+| `OPENROUTER_MODEL` | `anthropic/claude-3-haiku` |
+
+または Claude Code 経由で設定する場合：
+```bash
+gh secret set SUPABASE_URL --body "https://xxxx.supabase.co"
+gh secret set SUPABASE_KEY --body "eyJ..."
+gh secret set OPENROUTER_API_KEY --body "sk-or-v1-..."
+gh secret set OPENROUTER_MODEL --body "anthropic/claude-3-haiku"
+```
+
+---
+
+### Step 5 — Vercel でダッシュボードをデプロイ
+
+1. https://vercel.com で新規プロジェクトを作成
+2. フォークしたリポジトリを連携
+3. **Environment Variables** に以下を設定：
+   - `NEXT_PUBLIC_SUPABASE_URL` = Step 2 の Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = Supabase の `anon` キー
+4. Deploy を実行 → 公開 URL が発行される
+
+---
+
+### Step 6 — 動作確認
+
+GitHub Actions タブから手動実行で確認：
+```bash
+gh workflow run morning.yml
+gh workflow run night.yml
+```
+
+ログが `completed success` になれば完了です。
+
+---
+
 ## Project Overview
 
 X 自動投稿 SaaS。X のトレンドを収集し、AI で投稿文を生成して朝・夜の2回自動ポストする。
