@@ -33,7 +33,7 @@ export default async function AccountsPage() {
             className="mt-1 text-sm"
             style={{ color: 'rgba(38, 37, 30, 0.72)' }}
           >
-            X / note アカウントの追加・編集・管理
+            X アカウントの追加・編集・管理
           </p>
         </div>
       </div>

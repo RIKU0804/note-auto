@@ -3,7 +3,6 @@ import type { Account, Post, Log } from "@/types/database";
 
 const cycleLabels: Record<string, string> = {
   morning: "朝",
-  noon: "昼",
   night: "夜",
 };
 
@@ -70,7 +69,7 @@ export default async function DashboardPage() {
       ? Math.round((totalPosted / todayPosts.length) * 100)
       : 0;
 
-  const cycles: Post["cycle"][] = ["morning", "noon", "night"];
+  const cycles: Post["cycle"][] = ["morning", "night"];
   const accountStatuses = accounts.map((account) => {
     const accountPosts = todayPosts.filter(
       (p) => p.account_id === account.id
@@ -112,7 +111,7 @@ export default async function DashboardPage() {
           <p className="mt-2 text-3xl font-bold" style={{ color: '#26251e', letterSpacing: '-0.02em' }}>
             {totalPosted}
             <span className="ml-1 text-sm font-normal" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>
-              / {accounts.length * 3}
+              / {accounts.length * 2}
             </span>
           </p>
         </div>
@@ -180,7 +179,7 @@ export default async function DashboardPage() {
               {accountStatuses.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={3}
                     className="px-6 py-8 text-center text-sm"
                     style={{ color: 'rgba(38, 37, 30, 0.62)' }}
                   >

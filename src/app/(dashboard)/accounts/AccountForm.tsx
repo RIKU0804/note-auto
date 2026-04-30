@@ -39,8 +39,6 @@ export default function AccountForm({
 
   const [name, setName] = useState(account?.name ?? "");
   const [genreId, setGenreId] = useState(account?.genre_id ?? genres[0]?.id ?? "");
-  const [noteEmail, setNoteEmail] = useState(account?.note_email ?? "");
-  const [notePassword, setNotePassword] = useState("");
   const [xUsername, setXUsername] = useState(account?.x_username ?? "");
   const [xPassword, setXPassword] = useState("");
   const [postInterval, setPostInterval] = useState(
@@ -55,12 +53,10 @@ export default function AccountForm({
     const body: Record<string, unknown> = {
       name,
       genre_id: genreId,
-      note_email: noteEmail,
       x_username: xUsername,
       post_interval_minutes: postInterval,
     };
 
-    if (notePassword) body.note_password = notePassword;
     if (xPassword) body.x_password = xPassword;
 
     try {
@@ -129,38 +125,6 @@ export default function AccountForm({
             <option key={g.id} value={g.id}>{g.label}</option>
           ))}
         </select>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="mb-1.5 block" style={labelStyle}>
-            note メールアドレス
-          </label>
-          <input
-            type="email"
-            required
-            autoComplete="off"
-            value={noteEmail}
-            onChange={(e) => setNoteEmail(e.target.value)}
-            placeholder="user@example.com"
-            className={inputFocusClass}
-            style={inputStyle}
-          />
-        </div>
-        <div>
-          <label className="mb-1.5 block" style={labelStyle}>
-            note パスワード
-          </label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={notePassword}
-            onChange={(e) => setNotePassword(e.target.value)}
-            placeholder={account ? "変更しない場合は空欄" : "--------"}
-            className={inputFocusClass}
-            style={inputStyle}
-          />
-        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

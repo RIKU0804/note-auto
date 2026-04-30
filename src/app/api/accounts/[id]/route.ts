@@ -30,8 +30,6 @@ export async function PUT(
   const allowedFields: Record<string, string> = {
     name: "name",
     genre_id: "genre_id",
-    note_email: "note_email",
-    note_password: "note_password_enc",
     x_username: "x_username",
     x_password: "x_password_enc",
     post_interval_minutes: "post_interval_minutes",

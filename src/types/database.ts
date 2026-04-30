@@ -13,7 +13,6 @@ export type Account = {
   user_id: string;
   name: string;
   genre_id: string;
-  note_email: string;
   x_username: string;
   post_interval_minutes: number;
   is_active: boolean;
@@ -24,12 +23,8 @@ export type Post = {
   id: string;
   user_id: string;
   account_id: string;
-  cycle: "morning" | "noon" | "night";
-  title: string;
-  content_free: string;
-  content_paid: string;
-  note_price: number;
-  note_url: string | null;
+  cycle: "morning" | "night";
+  tweet_text: string;
   x_tweet_id: string | null;
   status: "queued" | "posted" | "failed";
   error_message: string | null;
@@ -47,7 +42,7 @@ export type Log = {
   created_at: string;
 };
 
-export type Cycle = "morning" | "noon" | "night";
+export type Cycle = "morning" | "night";
 
 export type PlanLimits = {
   plan: User["plan"];
@@ -67,17 +62,17 @@ export const PLAN_LIMITS: Record<User["plan"], PlanLimits> = {
   },
   pro: {
     plan: "pro",
-    max_accounts: 5,
+    max_accounts: 3,
     label: "Pro",
     price: "¥2,980/月",
-    cycles: ["morning", "noon", "night"] as const,
+    cycles: ["morning", "night"] as const,
   },
   business: {
     plan: "business",
-    max_accounts: 20,
+    max_accounts: 10,
     label: "Business",
     price: "¥9,800/月",
-    cycles: ["morning", "noon", "night"] as const,
+    cycles: ["morning", "night"] as const,
   },
 };
 

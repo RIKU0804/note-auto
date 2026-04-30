@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "note-auto | X × note 自動化ダッシュボード",
-  description: "X × note 自動化 SaaS ダッシュボード",
+  title: "note-auto | X 自動投稿ダッシュボード",
+  description: "X トレンド収集 + AI 投稿 SaaS ダッシュボード",
 };
 
 export default function RootLayout({

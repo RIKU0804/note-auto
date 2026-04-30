@@ -15,13 +15,12 @@ import { PLAN_LIMITS, type Cycle } from "@/types/database";
 function getCycleForHour(hour: number): Cycle | null {
   // JST-based cycle mapping
   if (hour >= 6 && hour < 10) return "morning";
-  if (hour >= 11 && hour < 14) return "noon";
   if (hour >= 19 && hour < 23) return "night";
   return null;
 }
 
 function isCycle(value: string | null): value is Cycle {
-  return value === "morning" || value === "noon" || value === "night";
+  return value === "morning" || value === "night";
 }
 
 async function handle(request: NextRequest) {
@@ -145,16 +144,13 @@ async function handle(request: NextRequest) {
       }
 
       // Create queued posts for each active account.
-      // The schema requires title/content_free/content_paid to be NOT NULL,
-      // so we write placeholders here and let the worker overwrite them
-      // once generation completes.
+      // tweet_text is NOT NULL in the schema; write a placeholder that
+      // the worker overwrites once generation completes.
       const posts = accounts.map((account) => ({
         user_id: user.id,
         account_id: account.id,
         cycle,
-        title: "生成中",
-        content_free: "(生成待ち)",
-        content_paid: "(生成待ち)",
+        tweet_text: "(生成待ち)",
         status: "queued",
       }));
 

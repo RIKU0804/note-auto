@@ -34,8 +34,6 @@ export async function GET() {
 const REQUIRED_FIELDS = [
   "name",
   "genre_id",
-  "note_email",
-  "note_password",
   "x_username",
   "x_password",
 ] as const;
@@ -158,8 +156,6 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       name: body.name as string,
       genre_id: body.genre_id as string,
-      note_email: body.note_email as string,
-      note_password_enc: body.note_password as string, // plain text for now — Vault later
       x_username: body.x_username as string,
       x_password_enc: body.x_password as string, // plain text for now — Vault later
       post_interval_minutes:

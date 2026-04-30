@@ -11,7 +11,6 @@ import type { Account, Post } from "@/types/database";
 
 const cycleLabels: Record<string, string> = {
   morning: "朝",
-  noon: "昼",
   night: "夜",
 };
 
@@ -88,6 +87,13 @@ export default function PostList({
 
   const accountName = (id: string) =>
     accounts.find((a) => a.id === id)?.name ?? "不明";
+
+  const tweetUrl = (post: Post): string | null => {
+    if (!post.x_tweet_id) return null;
+    // The accounts prop only carries id/name — we don't have the X username
+    // here, so use the username-agnostic /i/status/ form which X resolves.
+    return `https://x.com/i/status/${post.x_tweet_id}`;
+  };
 
   const selectStyle = {
     background: '#e6e5e0',
@@ -187,7 +193,7 @@ export default function PostList({
                 サイクル
               </th>
               <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
-                タイトル
+                ツイート
               </th>
               <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
                 ステータス
@@ -212,79 +218,82 @@ export default function PostList({
                 </td>
               </tr>
             ) : (
-              posts.map((post) => (
-                <tr
-                  key={post.id}
-                  style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.06)' }}
-                >
-                  <td className="whitespace-nowrap px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
-                    {new Date(post.created_at).toLocaleDateString("ja-JP")}
-                  </td>
-                  <td className="px-4 py-3" style={{ color: '#26251e' }}>
-                    {accountName(post.account_id)}
-                  </td>
-                  <td className="px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
-                    {cycleLabels[post.cycle]}
-                  </td>
-                  <td className="max-w-[200px] truncate px-4 py-3 font-medium" style={{ color: '#26251e' }}>
-                    {post.title}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium">
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ background: statusColors[post.status] }}
-                      />
-                      <span style={{ color: statusColors[post.status] }}>
-                        {statusLabels[post.status]}
+              posts.map((post) => {
+                const url = tweetUrl(post);
+                return (
+                  <tr
+                    key={post.id}
+                    style={{ borderBottom: '1px solid rgba(38, 37, 30, 0.06)' }}
+                  >
+                    <td className="whitespace-nowrap px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
+                      {new Date(post.created_at).toLocaleDateString("ja-JP")}
+                    </td>
+                    <td className="px-4 py-3" style={{ color: '#26251e' }}>
+                      {accountName(post.account_id)}
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
+                      {cycleLabels[post.cycle] ?? post.cycle}
+                    </td>
+                    <td className="max-w-[280px] truncate px-4 py-3" style={{ color: '#26251e' }}>
+                      {post.tweet_text}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium">
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ background: statusColors[post.status] }}
+                        />
+                        <span style={{ color: statusColors[post.status] }}>
+                          {statusLabels[post.status]}
+                        </span>
                       </span>
-                    </span>
-                    {post.status === "failed" && post.error_message && (
-                      <p className="mt-1 text-xs" style={{ color: 'rgba(207, 45, 86, 0.7)' }}>
-                        {post.error_message}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {post.note_url && (
-                      <a
-                        href={post.note_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-sm transition-colors"
-                        style={{ color: '#d94400' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.color = '#d94400'; }}
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        note
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {post.status === "failed" && (
-                      <button
-                        onClick={() => handleRetry(post.id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors"
-                        style={{
-                          borderRadius: '9999px',
-                          background: 'rgba(245, 78, 0, 0.08)',
-                          color: '#d94400',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = 'rgba(245, 78, 0, 0.15)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(245, 78, 0, 0.08)';
-                        }}
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                        再試行
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
+                      {post.status === "failed" && post.error_message && (
+                        <p className="mt-1 text-xs" style={{ color: 'rgba(207, 45, 86, 0.7)' }}>
+                          {post.error_message}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {url && (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-sm transition-colors"
+                          style={{ color: '#d94400' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = '#cf2d56'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = '#d94400'; }}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          X
+                        </a>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {post.status === "failed" && (
+                        <button
+                          onClick={() => handleRetry(post.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors"
+                          style={{
+                            borderRadius: '9999px',
+                            background: 'rgba(245, 78, 0, 0.08)',
+                            color: '#d94400',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(245, 78, 0, 0.15)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(245, 78, 0, 0.08)';
+                          }}
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          再試行
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
