@@ -31,10 +31,15 @@ export async function GET() {
 // ---------------------------------------------------------------------------
 // POST /api/accounts — create a new account
 // ---------------------------------------------------------------------------
-const REQUIRED_FIELDS = [
-  "name",
-  "genre_id",
-  "x_username",
+// X API path uses x_bearer_token; legacy Playwright fallback uses x_password.
+// We require x_username and at least one credential.
+const REQUIRED_FIELDS = ["name", "genre_id", "x_username"] as const;
+const OPTIONAL_STRING_FIELDS = [
+  "x_bearer_token",
+  "x_api_key",
+  "x_api_secret",
+  "x_access_token",
+  "x_access_token_secret",
   "x_password",
 ] as const;
 
@@ -74,6 +79,14 @@ export async function POST(request: NextRequest) {
       );
     }
   }
+  for (const field of OPTIONAL_STRING_FIELDS) {
+    if (body[field] !== undefined && typeof body[field] !== "string") {
+      return NextResponse.json(
+        { error: `Field "${field}" must be a string` },
+        { status: 400 },
+      );
+    }
+  }
   const name = body.name as string;
   const genreId = body.genre_id as string;
   if (name.length === 0 || name.length > 100) {
@@ -85,6 +98,21 @@ export async function POST(request: NextRequest) {
   if (genreId.length === 0 || genreId.length > 50) {
     return NextResponse.json(
       { error: "genre_id must be between 1 and 50 characters" },
+      { status: 400 },
+    );
+  }
+  // At least one X credential must be supplied (Bearer Token or password
+  // for the legacy Playwright fallback).
+  const hasBearer =
+    typeof body.x_bearer_token === "string" && body.x_bearer_token.length > 0;
+  const hasPassword =
+    typeof body.x_password === "string" && body.x_password.length > 0;
+  if (!hasBearer && !hasPassword) {
+    return NextResponse.json(
+      {
+        error:
+          "Provide x_bearer_token (recommended) or x_password (legacy Playwright fallback).",
+      },
       { status: 400 },
     );
   }
@@ -150,19 +178,35 @@ export async function POST(request: NextRequest) {
   }
 
   // --- insert ---
+  const insertRow: Record<string, unknown> = {
+    user_id: user.id,
+    name: body.name as string,
+    genre_id: body.genre_id as string,
+    x_username: body.x_username as string,
+    post_interval_minutes:
+      typeof body.post_interval_minutes === "number"
+        ? body.post_interval_minutes
+        : 15,
+  };
+  if (typeof body.x_bearer_token === "string" && body.x_bearer_token.length > 0)
+    insertRow.x_bearer_token = body.x_bearer_token;
+  if (typeof body.x_api_key === "string" && body.x_api_key.length > 0)
+    insertRow.x_api_key = body.x_api_key;
+  if (typeof body.x_api_secret === "string" && body.x_api_secret.length > 0)
+    insertRow.x_api_secret = body.x_api_secret;
+  if (typeof body.x_access_token === "string" && body.x_access_token.length > 0)
+    insertRow.x_access_token = body.x_access_token;
+  if (
+    typeof body.x_access_token_secret === "string" &&
+    body.x_access_token_secret.length > 0
+  )
+    insertRow.x_access_token_secret = body.x_access_token_secret;
+  if (typeof body.x_password === "string" && body.x_password.length > 0)
+    insertRow.x_password_enc = body.x_password; // legacy Playwright path
+
   const { data, error } = await supabase
     .from("accounts")
-    .insert({
-      user_id: user.id,
-      name: body.name as string,
-      genre_id: body.genre_id as string,
-      x_username: body.x_username as string,
-      x_password_enc: body.x_password as string, // plain text for now — Vault later
-      post_interval_minutes:
-        typeof body.post_interval_minutes === "number"
-          ? body.post_interval_minutes
-          : 15,
-    })
+    .insert(insertRow)
     .select()
     .single();
 

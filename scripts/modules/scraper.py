@@ -1,187 +1,140 @@
-"""Scrape trending tweets from X and analyze them with AI for X post generation.
+"""Collect trending tweets from X and analyze them with AI.
 
-Uses Playwright (headless Chromium) for X scraping and OpenRouter for
-AI-powered trend analysis.
+Switched from Playwright (ToS-violating headless login) to the official
+X API V2 Recent Search endpoint via tweepy. The Trends API is no longer
+available on Free tier, so we approximate "trending" content for a genre
+by querying high-engagement tweets for the genre's pre-defined keywords.
+
+Free tier budget: 1,500 tweet reads / month per project — this module
+caps per-genre fetches accordingly.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import urllib.parse
 from datetime import datetime, timezone
+from typing import Any
 
 import httpx
+import tweepy
 from loguru import logger
-from playwright.async_api import async_playwright, TimeoutError as PWTimeout
 
 from modules import db
 
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
 SCRAPE_CONFIG = {
-    "x_target_count": 30,
-    "x_min_likes": 100,
+    "x_target_count": 10,            # tweets per cycle (Free-tier conscious)
+    "x_per_keyword": 5,              # tweets per keyword
+    "x_min_likes": 50,
+    "x_recent_max_results": 10,      # max_results per search call (10..100)
 }
 
 _OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 # ---------------------------------------------------------------------------
-# X (Twitter) scraping
+# X API V2 — Recent Search
 # ---------------------------------------------------------------------------
 
-async def _login_to_x(page, account: dict) -> None:
-    logger.info("Logging in to X as {}", account.get("x_username", "unknown"))
+def _bearer_token_for(account: dict) -> str | None:
+    """Pick the best Bearer Token available.
 
-    await page.goto("https://x.com/i/flow/login", wait_until="domcontentloaded", timeout=30_000)
-    await page.wait_for_timeout(3000)
+    Account-specific tokens are preferred; fall back to a project-wide
+    ``X_BEARER_TOKEN`` env var so a shared scraper key can serve all users.
+    """
+    return account.get("x_bearer_token") or os.environ.get("X_BEARER_TOKEN")
 
-    email_input = page.locator('input[autocomplete="username"]')
-    await email_input.wait_for(state="visible", timeout=15_000)
-    await email_input.fill(account["x_username"])
-    await page.keyboard.press("Enter")
-    await page.wait_for_timeout(2000)
 
-    verification_input = page.locator('input[data-testid="ocfEnterTextTextInput"]')
-    try:
-        await verification_input.wait_for(state="visible", timeout=5000)
-        verify_value = account.get("x_phone", account.get("x_username", ""))
-        logger.info("Verification prompt detected, entering: {}", verify_value)
-        await verification_input.fill(verify_value)
-        await page.keyboard.press("Enter")
-        await page.wait_for_timeout(2000)
-    except PWTimeout:
-        logger.debug("No verification prompt — proceeding to password")
+def _build_search_query(keyword: str) -> str:
+    """Compose a Recent Search query: Japanese, no retweets, has engagement."""
+    # Quote keyword to match phrase if it contains spaces.
+    kw = keyword.strip()
+    if " " in kw:
+        kw = f'"{kw}"'
+    return f"{kw} lang:ja -is:retweet"
 
-    password_input = page.locator('input[type="password"]')
-    await password_input.wait_for(state="visible", timeout=15_000)
-    await password_input.fill(account["x_password"])
-    await page.keyboard.press("Enter")
-    await page.wait_for_timeout(3000)
+
+def _search_recent_for_keyword(
+    client: tweepy.Client, keyword: str, per_keyword: int, min_likes: int
+) -> list[dict[str, Any]]:
+    """Run one Recent Search call and shape the response into our row format."""
+    query = _build_search_query(keyword)
+    max_results = max(10, min(SCRAPE_CONFIG["x_recent_max_results"], 100))
 
     try:
-        await page.wait_for_url("**/home**", timeout=15_000)
-        logger.info("Successfully logged in to X")
-    except PWTimeout:
-        current_url = page.url
-        if "login" in current_url or "flow" in current_url:
-            raise RuntimeError(f"X login failed, stuck at: {current_url}")
-        logger.info("Login appears successful (current URL: {})", current_url)
+        resp = client.search_recent_tweets(
+            query=query,
+            max_results=max_results,
+            tweet_fields=["public_metrics", "author_id", "created_at"],
+        )
+    except tweepy.TooManyRequests as e:
+        logger.warning("X API rate limit hit during scrape ({}): {}", keyword, e)
+        return []
+    except tweepy.TweepyException as e:
+        logger.error("X API search failed for '{}': {}", keyword, e)
+        return []
+
+    data = getattr(resp, "data", None) or []
+    rows: list[dict[str, Any]] = []
+    for tweet in data:
+        metrics = getattr(tweet, "public_metrics", None) or {}
+        likes = int(metrics.get("like_count", 0) or 0)
+        retweets = int(metrics.get("retweet_count", 0) or 0)
+        if likes < min_likes:
+            continue
+        rows.append(
+            {
+                "tweet_id": str(getattr(tweet, "id", "")),
+                "text": getattr(tweet, "text", "") or "",
+                "likes": likes,
+                "retweets": retweets,
+                "author": str(getattr(tweet, "author_id", "") or "unknown"),
+            }
+        )
+        if len(rows) >= per_keyword:
+            break
+
+    logger.info("Recent search '{}': {} tweet(s) above {} likes", keyword, len(rows), min_likes)
+    return rows
 
 
-async def _extract_tweets_from_page(page, min_likes: int) -> list[dict]:
-    tweets: list[dict] = []
-    tweet_articles = page.locator('article[data-testid="tweet"]')
-    count = await tweet_articles.count()
-
-    for i in range(count):
-        try:
-            article = tweet_articles.nth(i)
-
-            text_el = article.locator('div[data-testid="tweetText"]')
-            text = await text_el.inner_text(timeout=3000) if await text_el.count() > 0 else ""
-
-            author_el = article.locator('div[data-testid="User-Name"] a').first
-            author_href = await author_el.get_attribute("href", timeout=3000) if await author_el.count() > 0 else ""
-            author = author_href.strip("/").split("/")[-1] if author_href else "unknown"
-
-            likes = 0
-            retweets = 0
-
-            like_el = article.locator('button[data-testid="like"] span, button[data-testid="unlike"] span')
-            if await like_el.count() > 0:
-                likes = _parse_metric(await like_el.first.inner_text(timeout=2000))
-
-            rt_el = article.locator('button[data-testid="retweet"] span, button[data-testid="unretweet"] span')
-            if await rt_el.count() > 0:
-                retweets = _parse_metric(await rt_el.first.inner_text(timeout=2000))
-
-            if likes < min_likes:
-                continue
-
-            parent_link = article.locator('a[href*="/status/"]').first
-            href = await parent_link.get_attribute("href", timeout=2000) or ""
-            tweet_id = next((p for p in href.split("/") if p.isdigit() and len(p) > 10), "")
-            if not tweet_id:
-                continue
-
-            tweets.append({"tweet_id": tweet_id, "text": text, "likes": likes, "retweets": retweets, "author": author})
-        except Exception as e:
-            logger.debug("Failed to extract tweet {}: {}", i, e)
-
-    return tweets
-
-
-def _parse_metric(text: str) -> int:
-    text = text.strip().replace(",", "")
-    if not text:
-        return 0
-    try:
-        if text.upper().endswith("K"):
-            return int(float(text[:-1]) * 1_000)
-        elif text.upper().endswith("M"):
-            return int(float(text[:-1]) * 1_000_000)
-        elif text.upper().endswith("万"):
-            return int(float(text[:-1]) * 10_000)
-        return int(text)
-    except ValueError:
-        return 0
-
-
-async def collect_x_posts(account: dict, genre_config: dict) -> list[dict]:
-    """Scrape trending tweets from X search for the given genre."""
-    keywords = genre_config.get("search_keywords", [])
+async def collect_x_posts(account: dict, genre_config: dict) -> list[dict[str, Any]]:
+    """Fetch genre-relevant tweets via Recent Search API."""
+    keywords: list[str] = genre_config.get("search_keywords", []) or []
     if not keywords:
         logger.warning("No search keywords configured — skipping X scrape")
         return []
 
-    target_count = SCRAPE_CONFIG["x_target_count"]
+    bearer = _bearer_token_for(account)
+    if not bearer:
+        logger.error(
+            "No X Bearer Token available for account '{}'. "
+            "Set x_bearer_token on the account or X_BEARER_TOKEN in env.",
+            account.get("name", account.get("id", "?")),
+        )
+        return []
+
+    client = tweepy.Client(bearer_token=bearer, wait_on_rate_limit=False)
+
+    target = SCRAPE_CONFIG["x_target_count"]
+    per_kw = SCRAPE_CONFIG["x_per_keyword"]
     min_likes = SCRAPE_CONFIG["x_min_likes"]
-    all_tweets: dict[str, dict] = {}
 
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(
-            headless=True,
-            args=["--no-sandbox", "--disable-dev-shm-usage"],
-        )
-        context = await browser.new_context(
-            viewport={"width": 1280, "height": 800},
-            locale="ja-JP",
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-        )
-        page = await context.new_page()
+    seen: dict[str, dict[str, Any]] = {}
+    for keyword in keywords:
+        if len(seen) >= target:
+            break
+        rows = _search_recent_for_keyword(client, keyword, per_kw, min_likes)
+        for row in rows:
+            tid = row["tweet_id"]
+            if tid and tid not in seen:
+                seen[tid] = row
 
-        try:
-            await _login_to_x(page, account)
-
-            for keyword in keywords:
-                if len(all_tweets) >= target_count:
-                    break
-
-                query = urllib.parse.quote(keyword)
-                await page.goto(f"https://x.com/search?q={query}&f=top", wait_until="domcontentloaded", timeout=30_000)
-                await page.wait_for_timeout(3000)
-
-                for scroll_idx in range(5):
-                    if len(all_tweets) >= target_count:
-                        break
-                    for t in await _extract_tweets_from_page(page, min_likes):
-                        if t["tweet_id"] not in all_tweets:
-                            all_tweets[t["tweet_id"]] = t
-                    logger.debug("Scroll {}/5: {} tweets so far", scroll_idx + 1, len(all_tweets))
-                    await page.evaluate("window.scrollBy(0, window.innerHeight * 2)")
-                    await page.wait_for_timeout(2000)
-
-        except Exception as e:
-            logger.error("Error during X scraping: {}", e)
-        finally:
-            await browser.close()
-
-    result = list(all_tweets.values())[:target_count]
-    logger.info("Collected {} tweets from X", len(result))
+    result = list(seen.values())[:target]
+    logger.info("Collected {} tweet(s) via X API Recent Search", len(result))
     return result
 
 
@@ -261,8 +214,11 @@ async def run(account: dict, genre_config: dict) -> dict:
     Returns dict with keys: x_posts, analysis
     """
     genre_name = genre_config.get("name", "unknown")
-    logger.info("Starting scraper for genre '{}', account '{}'",
-                genre_name, account.get("name", account.get("id", "unknown")))
+    logger.info(
+        "Starting scraper for genre '{}', account '{}'",
+        genre_name,
+        account.get("name", account.get("id", "unknown")),
+    )
 
     x_posts = await collect_x_posts(account, genre_config)
     logger.info("Collected {} X posts", len(x_posts))

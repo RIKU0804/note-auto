@@ -14,6 +14,16 @@ export type Account = {
   name: string;
   genre_id: string;
   x_username: string;
+  /** OAuth 2.0 Bearer Token for X API V2. Required for the API client path. */
+  x_bearer_token: string | null;
+  /** Optional OAuth 1.0a consumer key (for user-context posting). */
+  x_api_key: string | null;
+  /** Optional OAuth 1.0a consumer secret. */
+  x_api_secret: string | null;
+  /** Optional OAuth 1.0a user access token. */
+  x_access_token: string | null;
+  /** Optional OAuth 1.0a user access token secret. */
+  x_access_token_secret: string | null;
   post_interval_minutes: number;
   is_active: boolean;
   created_at: string;

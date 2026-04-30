@@ -40,6 +40,11 @@ export default function AccountForm({
   const [name, setName] = useState(account?.name ?? "");
   const [genreId, setGenreId] = useState(account?.genre_id ?? genres[0]?.id ?? "");
   const [xUsername, setXUsername] = useState(account?.x_username ?? "");
+  const [xBearerToken, setXBearerToken] = useState("");
+  const [xApiKey, setXApiKey] = useState("");
+  const [xApiSecret, setXApiSecret] = useState("");
+  const [xAccessToken, setXAccessToken] = useState("");
+  const [xAccessTokenSecret, setXAccessTokenSecret] = useState("");
   const [xPassword, setXPassword] = useState("");
   const [postInterval, setPostInterval] = useState(
     account?.post_interval_minutes ?? 60
@@ -57,6 +62,11 @@ export default function AccountForm({
       post_interval_minutes: postInterval,
     };
 
+    if (xBearerToken) body.x_bearer_token = xBearerToken;
+    if (xApiKey) body.x_api_key = xApiKey;
+    if (xApiSecret) body.x_api_secret = xApiSecret;
+    if (xAccessToken) body.x_access_token = xAccessToken;
+    if (xAccessTokenSecret) body.x_access_token_secret = xAccessTokenSecret;
     if (xPassword) body.x_password = xPassword;
 
     try {
@@ -127,22 +137,131 @@ export default function AccountForm({
         </select>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="mb-1.5 block" style={labelStyle}>
-            X ユーザー名
-          </label>
-          <input
-            type="text"
-            required
-            value={xUsername}
-            onChange={(e) => setXUsername(e.target.value)}
-            placeholder="@username"
-            className={inputFocusClass}
-            style={inputStyle}
-          />
+      <div>
+        <label className="mb-1.5 block" style={labelStyle}>
+          X ユーザー名
+        </label>
+        <input
+          type="text"
+          required
+          value={xUsername}
+          onChange={(e) => setXUsername(e.target.value)}
+          placeholder="@username"
+          className={inputFocusClass}
+          style={inputStyle}
+        />
+      </div>
+
+      <div
+        className="rounded-lg p-4"
+        style={{
+          background: '#f7f7f4',
+          border: '1px solid rgba(38, 37, 30, 0.1)',
+        }}
+      >
+        <p
+          className="mb-3 text-sm"
+          style={{ color: 'rgba(38, 37, 30, 0.72)' }}
+        >
+          X API V2 認証情報（推奨）。
+          <a
+            href="https://developer.twitter.com/en/portal/dashboard"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#cf2d56', textDecoration: 'underline' }}
+          >
+            X Developer Portal
+          </a>
+          で App を作成し、以下を取得してください。Bearer Token は必須、
+          OAuth 1.0a 4点（API Key/Secret + Access Token/Secret）も入れると
+          投稿が安定します。
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1.5 block" style={labelStyle}>
+              Bearer Token <span style={{ color: '#cf2d56' }}>*</span>
+            </label>
+            <input
+              type="password"
+              autoComplete="off"
+              value={xBearerToken}
+              onChange={(e) => setXBearerToken(e.target.value)}
+              placeholder={account ? "変更しない場合は空欄" : "AAAAAAAAAA..."}
+              className={inputFocusClass}
+              style={inputStyle}
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block" style={labelStyle}>
+                API Key
+              </label>
+              <input
+                type="password"
+                autoComplete="off"
+                value={xApiKey}
+                onChange={(e) => setXApiKey(e.target.value)}
+                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                className={inputFocusClass}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block" style={labelStyle}>
+                API Secret
+              </label>
+              <input
+                type="password"
+                autoComplete="off"
+                value={xApiSecret}
+                onChange={(e) => setXApiSecret(e.target.value)}
+                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                className={inputFocusClass}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block" style={labelStyle}>
+                Access Token
+              </label>
+              <input
+                type="password"
+                autoComplete="off"
+                value={xAccessToken}
+                onChange={(e) => setXAccessToken(e.target.value)}
+                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                className={inputFocusClass}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block" style={labelStyle}>
+                Access Token Secret
+              </label>
+              <input
+                type="password"
+                autoComplete="off"
+                value={xAccessTokenSecret}
+                onChange={(e) => setXAccessTokenSecret(e.target.value)}
+                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                className={inputFocusClass}
+                style={inputStyle}
+              />
+            </div>
+          </div>
         </div>
-        <div>
+      </div>
+
+      <details>
+        <summary
+          className="cursor-pointer text-sm"
+          style={{ color: 'rgba(38, 37, 30, 0.62)' }}
+        >
+          X パスワード（非推奨・Playwright フォールバック用）
+        </summary>
+        <div className="mt-2">
           <label className="mb-1.5 block" style={labelStyle}>
             X パスワード
           </label>
@@ -155,8 +274,15 @@ export default function AccountForm({
             className={inputFocusClass}
             style={inputStyle}
           />
+          <p
+            className="mt-1.5 text-xs"
+            style={{ color: 'rgba(38, 37, 30, 0.62)' }}
+          >
+            X の利用規約違反となるため、原則として使用しないでください。
+            X_CLIENT=playwright を明示的に指定した時のみ使われます。
+          </p>
         </div>
-      </div>
+      </details>
 
       <div>
         <label className="mb-1.5 block" style={labelStyle}>

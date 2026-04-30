@@ -124,7 +124,8 @@ async def process_user(user: dict, cycle: str):
             post["id"] = post_id
 
             # Step 4: Post to X
-            tweet_id = await x_poster.post_tweet(account, post["tweet_text"])
+            post_result = await x_poster.post_tweet(account, post["tweet_text"])
+            tweet_id = post_result.get("tweet_id", "") if isinstance(post_result, dict) else str(post_result)
             tweet_url = (
                 f"https://x.com/{account.get('x_username', '')}/status/{tweet_id}"
                 if tweet_id else ""

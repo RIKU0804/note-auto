@@ -31,7 +31,12 @@ export async function PUT(
     name: "name",
     genre_id: "genre_id",
     x_username: "x_username",
-    x_password: "x_password_enc",
+    x_password: "x_password_enc", // legacy Playwright path
+    x_bearer_token: "x_bearer_token",
+    x_api_key: "x_api_key",
+    x_api_secret: "x_api_secret",
+    x_access_token: "x_access_token",
+    x_access_token_secret: "x_access_token_secret",
     post_interval_minutes: "post_interval_minutes",
     is_active: "is_active",
   };
