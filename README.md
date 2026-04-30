@@ -15,6 +15,7 @@ X (旧 Twitter) のトレンドを自動で収集し、AI が朝・夜の 1 日 
 - [アーキテクチャ](#アーキテクチャ)
 - [クイックスタート (5 分版)](#クイックスタート-5-分版)
 - [詳細セットアップ (30 分版)](#詳細セットアップ-30-分版)
+- [X API V2 セットアップ手順](#x-api-v2-セットアップ手順)
 - [ダッシュボードの使い方](#ダッシュボードの使い方)
 - [自動実行の仕組み](#自動実行の仕組み)
 - [プラン制限](#プラン制限)
@@ -27,8 +28,13 @@ X (旧 Twitter) のトレンドを自動で収集し、AI が朝・夜の 1 日 
 
 ## このリポジトリは何か
 
-X のトレンドを定期収集し、OpenRouter 経由で AI に投稿文を生成させ、Playwright で X に自動投稿する SaaS。
+X のトレンドを定期収集し、OpenRouter 経由で AI に投稿文を生成させ、**公式 X API V2 (Free tier)** で自動投稿する SaaS。
 複数アカウント・ジャンル別投稿スタイル・Discord 通知に対応。Vercel と GitHub Actions の無料枠だけで運用可能。
+
+> **2026-04 重要変更**: 旧バージョンは Playwright で X にブラウザログインしてスクレイピング・投稿
+> していましたが、これは X の利用規約違反であり凍結リスクが高いため、**公式 X API V2** に切り替えました。
+> 既存の Playwright 実装は `X_CLIENT=playwright` で緊急フォールバックとして残してありますが、
+> 通常運用では使わないでください。詳細は [X API V2 セットアップ手順](#x-api-v2-セットアップ手順) を参照。
 
 > スクリーンショット: `./docs/screenshots/dashboard.png` などをここに配置 (オプション)
 
@@ -61,8 +67,8 @@ X のトレンドを定期収集し、OpenRouter 経由で AI に投稿文を生
                                                   |   /scripts           |
                                                   +----+-------+--------+
                                                        |       |
-                                              Playwright       OpenRouter
-                                              (X login)        (Claude 3 Haiku)
+                                              tweepy           OpenRouter
+                                              (X API V2)       (Claude 3 Haiku)
                                                        |
                                                        v
                                                +----------------+
@@ -121,10 +127,11 @@ npm install
 
 1. https://supabase.com にサインアップし、**New project** を作成
 2. プロジェクトが起動したら左サイドバーの **SQL Editor** を開く
-3. **New query** で以下を貼り付けて実行:
+3. **New query** で以下を順番に貼り付けて実行:
    - `supabase/001_initial_schema.sql` の内容すべて
-4. （旧バージョンからアップグレードする場合のみ）`supabase/002_remove_note.sql` も実行
-5. **Project Settings → API** ページで以下をメモする:
+   - （旧バージョンからアップグレードする場合のみ）`supabase/002_remove_note.sql`
+   - **`supabase/003_xapi_migration.sql`**（X API V2 用カラム追加。新規・既存問わず実行）
+4. **Project Settings → API** ページで以下をメモする:
    - `Project URL` (例: `https://xxxx.supabase.co`)
    - `anon public` キー (ダッシュボード公開用)
    - `service_role` キー (ワーカー用、絶対に公開しない)
@@ -241,6 +248,79 @@ gh run watch                       # ログを追跡
 
 ---
 
+## X API V2 セットアップ手順
+
+X 連携は **公式 X API V2 (Free tier)** で動きます。アカウントごとに以下の手順で
+認証情報を取得し、ダッシュボードの **アカウント追加** フォームに貼り付けてください。
+
+### Free tier の制約 (2026 年現在)
+
+| 機能 | 制限 |
+|------|------|
+| ツイート投稿 | 月 100 ツイート |
+| ツイート取得 (Recent Search 等) | 月 1,500 件 |
+| トレンド API | **廃止済み（使えない）** |
+| 認証 | OAuth 2.0 Bearer Token + OAuth 1.0a (User Context) |
+
+> このプロジェクトは Free tier 内で動くよう、ジャンルごとに事前定義した
+> キーワード（`scripts/config/genres.json` の `search_keywords`）で
+> Recent Search を叩いてトレンドを近似します。1 サイクルあたりの取得件数は
+> `scripts/modules/scraper.py` の `SCRAPE_CONFIG` で調整可能です。
+
+### 手順
+
+1. **X Developer Portal にサインイン**
+   - https://developer.twitter.com/en/portal/dashboard
+   - 利用するアカウントでログイン（投稿させたい X アカウントと同一でも別でも可）
+
+2. **Project + App を作成**
+   - **Add Project** → 名前を付ける
+   - その配下に **App** を作成（例: `note-auto`）
+   - User authentication settings は次のように設定:
+     - App permissions: **Read and write**
+     - Type of App: **Web App** など適当でよい
+     - Callback URL: `http://localhost`（投稿のみで OAuth フローは使わないので任意）
+
+3. **Keys and tokens タブで以下をコピー**
+   - **Bearer Token**（OAuth 2.0、必須）
+   - **API Key / API Key Secret**（Consumer Keys）
+   - **Access Token / Access Token Secret**（投稿に必要）
+
+4. **ダッシュボードのアカウント追加フォームに貼り付け**
+   - `/accounts` → **アカウント追加**
+   - **Bearer Token** に貼り付け（必須）
+   - 投稿の安定のため、**API Key / API Secret / Access Token / Access Token Secret** も
+     入れることを推奨（OAuth 1.0a User Context での投稿に使われる）
+   - **X パスワード** 欄は空のままで OK（Playwright フォールバック専用）
+
+5. **動作確認**
+   ```bash
+   gh workflow run morning.yml
+   gh run watch
+   ```
+   `Tweet posted via X API V2: 1234...` のログが出れば成功。
+
+### 緊急時のフォールバック (Playwright)
+
+何らかの事情で公式 API が使えない場合、`X_CLIENT=playwright` を環境変数に設定すると
+旧 Playwright 実装に切り替わります。
+
+```bash
+# GitHub Actions Secrets / .env.local など
+X_CLIENT=playwright
+```
+
+ただし **X の利用規約違反** であり凍結リスクが高いため、緊急時以外は使わないでください。
+この場合は `accounts.x_password_enc` に X のログインパスワードが必要です。
+
+### スクレイパー専用の Bearer Token (任意)
+
+複数アカウントで共通のトレンド収集を行いたい場合、各アカウントに Bearer Token を入れる
+代わりに環境変数 `X_BEARER_TOKEN` を設定すると、スクレイピング時はそれが使われます。
+投稿用 Token はアカウントごとに必要です。
+
+---
+
 ## ダッシュボードの使い方
 
 ### アカウント追加
@@ -249,9 +329,13 @@ gh run watch                       # ログを追跡
 
 - **アカウント名**: 自分が判別できる名前 (例: 自己啓発アカウント)
 - **ジャンル**: AI のスタイルに影響 (自己啓発 / ビジネス / 健康・美容 / テクノロジー)
-- **X ユーザー名**: ログイン用の `@` なしユーザー名 / メールアドレス
-- **X パスワード**: ログイン用パスワード (現状は AES 等の本格暗号化前の状態で DB に保存。
-  本番運用では Supabase Vault への移行を強く推奨)
+- **X ユーザー名**: 投稿先 X アカウントの `@` なしユーザー名
+- **Bearer Token**（必須）: X Developer Portal の **Keys and tokens** から取得
+  （[X API V2 セットアップ手順](#x-api-v2-セットアップ手順) 参照）
+- **API Key / API Secret / Access Token / Access Token Secret**（推奨）: 投稿の安定のため
+  4 点とも入れることを推奨
+- **X パスワード**（非推奨）: `X_CLIENT=playwright` の緊急フォールバック専用。
+  通常は空のままでよい
 - **投稿間隔（分）**: 同一アカウント内で連続投稿しない最低間隔
 
 ### ジャンル
@@ -344,11 +428,21 @@ GitHub Actions では `runs-on: ubuntu-22.04` に固定済み (24.04 だと Play
 - モデルを `anthropic/claude-3-haiku` から軽量モデル (`mistralai/mistral-7b-instruct` など)
   に切り替えるとコストを下げられる
 
-### X ログインで凍結される
+### X API のレート制限 / 認証エラー
 
-- アカウントを連続作成・連続投稿していると凍結対象。投稿間隔を伸ばし、ジャンルごとに
-  別アカウントを使う運用を推奨
-- 凍結されたアカウントは `/accounts` で **停止** にしてから新規アカウントを追加
+- 月の Free tier 制限を超えると 429 Too Many Requests が返る → 翌月まで待機、または
+  X Developer Portal で Basic / Pro tier にアップグレード
+- 401 Unauthorized: Bearer Token または OAuth 1.0a 認証情報が間違っている
+  → ダッシュボードの **アカウント編集** で Token を再貼り付け
+- 403 Forbidden: App permissions が **Read only** になっている → Developer Portal で
+  **Read and write** に変更し、Access Token を再生成
+- ログ確認: `gh run view <run-id> --log` で `X API V2` 関連のメッセージを探す
+
+### X ログインで凍結される（Playwright フォールバック使用時）
+
+- 通常は **公式 X API V2** で動かしているため凍結されにくい
+- `X_CLIENT=playwright` で動かしている場合のみ、ブラウザログインに起因する凍結が起こりうる
+  → 速やかに `X_CLIENT=api` に戻し、Bearer Token を設定すること
 
 ### Vercel build が `module not found` で失敗
 
@@ -384,16 +478,18 @@ note-auto/
 ├── scripts/                      # Python ワーカー
 │   ├── worker.py                 # メインエントリーポイント
 │   ├── modules/
-│   │   ├── scraper.py            # X トレンド収集 + AI 分析
+│   │   ├── scraper.py            # X トレンド収集 (X API V2 Recent Search) + AI 分析
 │   │   ├── generator.py          # X 投稿文生成 (OpenRouter)
-│   │   ├── x_poster.py           # X 投稿 (Playwright)
+│   │   ├── x_poster.py           # X 投稿 (X API V2 / tweepy, X_CLIENT で切替)
 │   │   ├── discord_notify.py     # Discord 通知
 │   │   └── db.py                 # Supabase DB 操作
+│   ├── tests/                    # mock テスト (tweepy)
 │   ├── config/genres.json        # ジャンル設定
 │   └── requirements.txt
 ├── supabase/
 │   ├── 001_initial_schema.sql    # 新規セットアップ用
-│   └── 002_remove_note.sql       # 既存DBから note 関連カラムを削除
+│   ├── 002_remove_note.sql       # 既存DBから note 関連カラムを削除
+│   └── 003_xapi_migration.sql    # X API V2 用カラム追加（必須）
 ├── .github/workflows/
 │   ├── morning.yml
 │   └── night.yml
