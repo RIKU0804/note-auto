@@ -70,6 +70,10 @@ class PostTweetApiTests(unittest.TestCase):
         self.assertFalse(kwargs["wait_on_rate_limit"])
 
         fake_client.create_tweet.assert_called_once_with(text="hello world")
+        # media_ids must not be present for text-only posts.
+        self.assertNotIn(
+            "media_ids", fake_client.create_tweet.call_args.kwargs,
+        )
         self.assertIsInstance(result, dict)
         self.assertEqual(result["tweet_id"], "9999000111222333")
         self.assertIn("posted_at", result)

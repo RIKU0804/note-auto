@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 loguru==0.7.2
 tweepy>=4.14,<5.0
 cryptography>=42,<46
+openai>=1.40,<2.0

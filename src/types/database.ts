@@ -40,6 +40,8 @@ export type Post = {
   error_message: string | null;
   posted_at: string | null;
   created_at: string;
+  image_prompt: string | null;
+  has_image: boolean;
 };
 
 export type Log = {

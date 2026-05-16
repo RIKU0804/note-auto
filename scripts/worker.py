@@ -19,7 +19,7 @@ if _SCRIPTS_DIR not in sys.path:
 
 from loguru import logger
 
-from modules import db, discord_notify, generator, scraper, x_poster
+from modules import db, discord_notify, generator, image_gen, scraper, x_poster
 from modules.crypto_helper import decrypt_account_secrets
 
 # ---------------------------------------------------------------------------
@@ -146,22 +146,48 @@ async def process_user(user: dict, cycle: str):
             post = await generator.run(account, research, cycle, genre_config)
             post["cycle"] = cycle
 
-            # Step 3: Save draft to DB
+            # Step 3: Generate the companion image (if the genre opts in).
+            # Failure here is non-fatal — the worker falls back to a
+            # text-only post and records the reason on the post row.
+            media_bytes: bytes | None = None
+            image_prompt: str | None = None
+            if genre_config.get("image_prompt"):
+                image_prompt = image_gen.build_prompt(
+                    genre_config, research.get("analysis", {}), post["tweet_text"],
+                )
+                post["image_prompt"] = image_prompt
+                try:
+                    media_bytes = await asyncio.to_thread(
+                        image_gen.generate_image, image_prompt,
+                    )
+                except Exception as e:
+                    logger.error("Image generation failed for '{}': {}", account_name, e)
+                    media_bytes = None
+
+            # Step 4: Save draft to DB
             post_id = db.save_post(user["id"], account["id"], post)
             if not post_id:
                 raise RuntimeError("save_post returned empty id")
             post["id"] = post_id
 
-            # Step 4: Post to X
-            post_result = await x_poster.post_tweet(account, post["tweet_text"])
+            # Step 5: Post to X (with image if available)
+            post_result = await x_poster.post_tweet(
+                account, post["tweet_text"], media_bytes=media_bytes,
+            )
             tweet_id = post_result.get("tweet_id", "") if isinstance(post_result, dict) else str(post_result)
             tweet_url = (
                 f"https://x.com/{account.get('x_username', '')}/status/{tweet_id}"
                 if tweet_id else ""
             )
 
-            # Step 5: Update DB and log
-            db.update_post_status(post_id, "posted", x_tweet_id=tweet_id or None)
+            # Step 6: Update DB and log
+            db.update_post_status(
+                post_id,
+                "posted",
+                x_tweet_id=tweet_id or None,
+                image_prompt=image_prompt,
+                has_image=media_bytes is not None,
+            )
             db.save_log(
                 user["id"], "info", "worker",
                 f"Posted tweet {tweet_id} for '{account_name}'",

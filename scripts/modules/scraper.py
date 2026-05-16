@@ -16,9 +16,9 @@ import json
 import os
 from typing import Any
 
-import httpx
 import tweepy
 from loguru import logger
+from openai import OpenAI
 
 from modules import db
 
@@ -31,8 +31,6 @@ SCRAPE_CONFIG = {
     "x_min_likes": 50,
     "x_recent_max_results": 10,      # max_results per search call (10..100)
 }
-
-_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 # ---------------------------------------------------------------------------
@@ -156,12 +154,12 @@ def _strip_code_fence(content: str) -> str:
 
 
 async def analyze_trends(x_posts: list[dict], genre_config: dict) -> dict:
-    """Use OpenRouter AI to analyze collected X posts and extract trends."""
-    model = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-3-haiku")
-    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+    """Use OpenAI to analyze collected X posts and extract trends."""
+    model = os.environ.get("OPENAI_TEXT_MODEL", "gpt-4o-mini")
+    api_key = os.environ.get("OPENAI_API_KEY", "")
 
     if not api_key:
-        logger.error("OPENROUTER_API_KEY not set — cannot analyze trends")
+        logger.error("OPENAI_API_KEY not set — cannot analyze trends")
         return {"top_topics": [], "trend_summary": "", "keywords": []}
 
     genre_name = genre_config.get("name", "general")
@@ -192,16 +190,15 @@ async def analyze_trends(x_posts: list[dict], genre_config: dict) -> dict:
 JSONのみを返してください。"""
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(
-                _OPENROUTER_URL,
-                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": 800},
-            )
-            resp.raise_for_status()
-            data = resp.json()
-
-        content = _strip_code_fence(data["choices"][0]["message"]["content"])
+        client = OpenAI(api_key=api_key)
+        resp = await asyncio.to_thread(
+            client.chat.completions.create,
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=800,
+            response_format={"type": "json_object"},
+        )
+        content = _strip_code_fence((resp.choices[0].message.content or "").strip())
         result = json.loads(content)
         logger.info("Trend analysis complete: {} topics", len(result.get("top_topics", [])))
         return result

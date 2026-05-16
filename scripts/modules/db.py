@@ -140,6 +140,8 @@ def update_post_status(
     status: str,
     x_tweet_id: str | None = None,
     error_message: str | None = None,
+    image_prompt: str | None = None,
+    has_image: bool | None = None,
 ) -> None:
     try:
         updates: dict = {"status": status}
@@ -147,6 +149,10 @@ def update_post_status(
             updates["x_tweet_id"] = x_tweet_id
         if error_message is not None:
             updates["error_message"] = error_message
+        if image_prompt is not None:
+            updates["image_prompt"] = image_prompt
+        if has_image is not None:
+            updates["has_image"] = has_image
         if status == "posted":
             updates["posted_at"] = datetime.now(timezone.utc).isoformat()
         supabase.table("posts").update(updates).eq("id", post_id).execute()

@@ -68,7 +68,8 @@ X のトレンドを定期収集し、OpenRouter 経由で AI に投稿文を生
                                                   +----+-------+--------+
                                                        |       |
                                               tweepy           OpenRouter
-                                              (X API V2)       (Claude 3 Haiku)
+                                              (X API V2)       (OpenAI gpt-4o-mini +
+                                                                gpt-image-2)
                                                        |
                                                        v
                                                +----------------+
@@ -132,6 +133,7 @@ npm install
    - （旧バージョンからアップグレードする場合のみ）`supabase/002_remove_note.sql`
    - **`supabase/003_xapi_migration.sql`**（X API V2 用カラム追加。新規・既存問わず実行）
    - **`supabase/004_dashboard_alignment.sql`**（`post_interval_minutes` / `discord_user_id` / CHECK 制約等。新規・既存問わず実行）
+   - **`supabase/005_image_posts.sql`**（`posts.image_prompt` / `has_image` 追加。画像生成連携に必須）
 4. **Project Settings → API** ページで以下をメモする:
    - `Project URL` (例: `https://xxxx.supabase.co`)
    - `anon public` キー (ダッシュボード公開用)
@@ -144,12 +146,14 @@ npm install
 
 ---
 
-### Step 3 — OpenRouter アカウント
+### Step 3 — OpenAI アカウント
 
-1. https://openrouter.ai にサインアップ
-2. **Keys** ページで API キーを発行 (`sk-or-v1-...`)
-3. 使用モデルを決める。デフォルト推奨は `anthropic/claude-3-haiku` (安価で十分な品質)
-4. 必要に応じてアカウントに少額チャージ ($5 程度で数千ツイート分)
+1. https://platform.openai.com にサインアップ
+2. **API keys** ページで Secret key を発行 (`sk-...`)
+3. 使用モデルを決める:
+   - テキスト生成: `OPENAI_TEXT_MODEL`(既定 `gpt-4o-mini`、安価で十分な品質)
+   - 画像生成:   `OPENAI_IMAGE_MODEL`(既定 `gpt-image-2`)
+4. **Billing** から少額チャージ($10 程度で数千ツイート + 数百枚の画像)
 
 ---
 
@@ -171,8 +175,9 @@ SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_KEY=eyJ...service_role
 
 # OpenRouter
-OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=anthropic/claude-3-haiku
+OPENAI_API_KEY=sk-...
+OPENAI_TEXT_MODEL=gpt-4o-mini
+OPENAI_IMAGE_MODEL=gpt-image-2
 
 # Vercel cron 用シークレット (任意の長いランダム文字列)
 CRON_SECRET=$(openssl rand -hex 32)
@@ -192,8 +197,9 @@ CRON_SECRET=$(openssl rand -hex 32)
 |-----------|----|
 | `SUPABASE_URL` | Step 2 の Project URL |
 | `SUPABASE_KEY` | Step 2 の `service_role` キー |
-| `OPENROUTER_API_KEY` | Step 3 の API キー |
-| `OPENROUTER_MODEL` | `anthropic/claude-3-haiku` |
+| `OPENAI_API_KEY` | Step 3 の API キー |
+| `OPENAI_TEXT_MODEL` | `gpt-4o-mini` 等 |
+| `OPENAI_IMAGE_MODEL` | `gpt-image-2` 等 |
 | `ENCRYPTION_KEY` | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` で生成した 32 byte hex |
 | `X_CLIENT` (任意) | `api`(既定) または `playwright` |
 | `X_BEARER_TOKEN` (任意) | 共有スクレイパー用 Bearer Token |
@@ -203,8 +209,9 @@ CRON_SECRET=$(openssl rand -hex 32)
 ```bash
 gh secret set SUPABASE_URL --body "https://xxxx.supabase.co"
 gh secret set SUPABASE_KEY --body "eyJ...service_role"
-gh secret set OPENROUTER_API_KEY --body "sk-or-v1-..."
-gh secret set OPENROUTER_MODEL --body "anthropic/claude-3-haiku"
+gh secret set OPENAI_API_KEY --body "sk-..."
+gh secret set OPENAI_TEXT_MODEL --body "gpt-4o-mini"
+gh secret set OPENAI_IMAGE_MODEL --body "gpt-image-2"
 ```
 
 > ⚠️ **ハマりどころ**: GitHub Actions の Secrets は `Settings → Secrets and variables`
@@ -430,8 +437,9 @@ GitHub Actions では `runs-on: ubuntu-22.04` に固定済み (24.04 だと Play
 ### OpenRouter rate limit / 残高不足
 
 - ログに `429` や `insufficient_quota` が出る → OpenRouter 側で Credits を追加
-- モデルを `anthropic/claude-3-haiku` から軽量モデル (`mistralai/mistral-7b-instruct` など)
-  に切り替えるとコストを下げられる
+- モデルを `gpt-4o-mini` から軽量モデル (`gpt-4.1-nano` など) に切り替えるとコストを下げられる
+- 画像生成のコストが高ければ、`OPENAI_IMAGE_MODEL` を未指定にしてテキスト専用運用に戻すか、
+  `scripts/config/genres.json` の `image_prompt` を空にして該当ジャンルだけ画像なしにする
 
 ### X API のレート制限 / 認証エラー
 

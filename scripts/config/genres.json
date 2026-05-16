@@ -5,28 +5,32 @@
       "label": "自己啓発",
       "search_keywords": ["自己啓発", "習慣", "ルーティン", "マインドセット", "成長"],
       "article_style": "前向きで背中を押すトーン。読み手の行動を具体的に促す。",
-      "reply_style": "共感と励まし。次の一歩を提案する。"
+      "reply_style": "共感と励まし。次の一歩を提案する。",
+      "image_prompt": "Editorial lifestyle photograph of an early-morning desk: open journal, hot coffee, soft natural light through a window, minimal Scandinavian aesthetic. Warm and motivating mood. Theme: {label}. No text, no logos."
     },
     {
       "name": "business",
       "label": "ビジネス",
       "search_keywords": ["ビジネス", "経営", "マーケティング", "副業", "起業"],
       "article_style": "具体的な数字やデータを交えた説得力のある文体。信頼感を重視。",
-      "reply_style": "論理的かつ丁寧な返信。具体例を添えて。"
+      "reply_style": "論理的かつ丁寧な返信。具体例を添えて。",
+      "image_prompt": "Clean editorial photograph of a modern workspace: laptop with abstract chart graphics, notebook with handwritten notes, ceramic coffee cup, soft daylight. Professional and trustworthy mood. Theme: {label}. No text, no logos."
     },
     {
       "name": "health",
       "label": "健康・美容",
       "search_keywords": ["健康", "ダイエット", "筋トレ", "メンタルヘルス", "睡眠"],
       "article_style": "エビデンスに基づきつつ、わかりやすく噛み砕いた解説。",
-      "reply_style": "優しく励ます返信。無理のないアドバイスを添えて。"
+      "reply_style": "優しく励ます返信。無理のないアドバイスを添えて。",
+      "image_prompt": "Bright editorial photograph of a healthy lifestyle scene: a fresh fruit bowl, yoga mat rolled in the corner, water bottle, indoor plants. Calm and uplifting tone. Theme: {label}. No text, no logos."
     },
     {
       "name": "technology",
       "label": "テクノロジー",
       "search_keywords": ["AI", "テクノロジー", "プログラミング", "ガジェット", "Web開発"],
       "article_style": "最新情報をキャッチアップしつつ、初心者にも届く言葉で解説。",
-      "reply_style": "技術的に正確かつフレンドリーな返信。具体的なリンクや例を交えて。"
+      "reply_style": "技術的に正確かつフレンドリーな返信。具体的なリンクや例を交えて。",
+      "image_prompt": "Editorial product photograph of a minimal tech desk: laptop with code editor on screen (illegible), mechanical keyboard, smartphone, soft rim lighting on a dark background. Modern and futuristic mood. Theme: {label}. No text, no logos."
     }
   ]
 }
