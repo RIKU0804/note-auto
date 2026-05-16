@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Account, Post, Log } from "@/types/database";
+import type { Account, Post, Log, User } from "@/types/database";
+import { PLAN_LIMITS } from "@/types/database";
 
 const cycleLabels: Record<string, string> = {
   morning: "朝",
@@ -39,7 +40,7 @@ export default async function DashboardPage() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const [accountsRes, postsRes, logsRes] = await Promise.all([
+  const [accountsRes, postsRes, logsRes, userRes] = await Promise.all([
     supabase
       .from("accounts")
       .select("*")
@@ -57,19 +58,26 @@ export default async function DashboardPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("users")
+      .select("plan")
+      .eq("id", user.id)
+      .single(),
   ]);
 
   const accounts: Account[] = accountsRes.data ?? [];
   const todayPosts: Post[] = postsRes.data ?? [];
   const recentLogs: Log[] = logsRes.data ?? [];
 
+  const plan = ((userRes.data as Pick<User, "plan"> | null)?.plan ??
+    "free") as User["plan"];
+  const cycles: Post["cycle"][] = [...(PLAN_LIMITS[plan]?.cycles ?? ["morning"])];
+
   const totalPosted = todayPosts.filter((p) => p.status === "posted").length;
   const successRate =
     todayPosts.length > 0
       ? Math.round((totalPosted / todayPosts.length) * 100)
       : 0;
-
-  const cycles: Post["cycle"][] = ["morning", "night"];
   const accountStatuses = accounts.map((account) => {
     const accountPosts = todayPosts.filter(
       (p) => p.account_id === account.id
@@ -111,7 +119,7 @@ export default async function DashboardPage() {
           <p className="mt-2 text-3xl font-bold" style={{ color: '#26251e', letterSpacing: '-0.02em' }}>
             {totalPosted}
             <span className="ml-1 text-sm font-normal" style={{ color: 'rgba(38, 37, 30, 0.62)' }}>
-              / {accounts.length * 2}
+              / {accounts.length * cycles.length}
             </span>
           </p>
         </div>
@@ -179,7 +187,7 @@ export default async function DashboardPage() {
               {accountStatuses.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={3}
+                    colSpan={1 + cycles.length}
                     className="px-6 py-8 text-center text-sm"
                     style={{ color: 'rgba(38, 37, 30, 0.62)' }}
                   >
@@ -246,7 +254,7 @@ export default async function DashboardPage() {
                     background:
                       log.level === "error"
                         ? "#cf2d56"
-                        : log.level === "warn"
+                        : log.level === "warning"
                           ? "#c08532"
                           : "#1f8a65",
                   }}

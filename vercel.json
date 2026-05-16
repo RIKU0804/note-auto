@@ -1,9 +1,5 @@
 {
   "buildCommand": "next build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "crons": [
-    { "path": "/api/cron/cycle?cycle=morning", "schedule": "45 21 * * *" },
-    { "path": "/api/cron/cycle?cycle=night", "schedule": "45 10 * * *" }
-  ]
+  "framework": "nextjs"
 }

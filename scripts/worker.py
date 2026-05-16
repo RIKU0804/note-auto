@@ -20,15 +20,20 @@ if _SCRIPTS_DIR not in sys.path:
 from loguru import logger
 
 from modules import db, discord_notify, generator, scraper, x_poster
+from modules.crypto_helper import decrypt_account_secrets
 
 # ---------------------------------------------------------------------------
-# Plan limits
+# Plan limits — fetched lazily from the database (plan_limits table).
 # ---------------------------------------------------------------------------
-PLAN_LIMITS = {
-    "free":     {"accounts": 1,  "cycles": ["morning"]},
-    "pro":      {"accounts": 3,  "cycles": ["morning", "night"]},
-    "business": {"accounts": 10, "cycles": ["morning", "night"]},
-}
+_PLAN_CACHE: dict | None = None
+
+
+def load_plan_limits() -> dict:
+    global _PLAN_CACHE
+    if _PLAN_CACHE is None:
+        _PLAN_CACHE = db.get_plan_limits()
+    return _PLAN_CACHE
+
 
 # ---------------------------------------------------------------------------
 # Genre config loader
@@ -68,16 +73,37 @@ def get_genre_config(genre_id: str) -> dict:
 
 def get_allowed_accounts(user: dict) -> list:
     plan = user.get("plan", "free")
-    limit = PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])["accounts"]
+    limits = load_plan_limits()
+    plan_cfg = limits.get(plan) or limits.get("free", {"max_accounts": 1})
+    limit = plan_cfg["max_accounts"]
     accounts = user.get("accounts", [])
     if len(accounts) > limit:
-        logger.info("User {} plan '{}': {} accounts, limited to {}", user.get("id"), plan, len(accounts), limit)
+        logger.info("User {} plan '{}': {} accounts, limited to {}",
+                    user.get("id"), plan, len(accounts), limit)
     return accounts[:limit]
 
 
 def get_allowed_cycles(user: dict) -> list:
     plan = user.get("plan", "free")
-    return PLAN_LIMITS.get(plan, PLAN_LIMITS["free"])["cycles"]
+    limits = load_plan_limits()
+    plan_cfg = limits.get(plan) or limits.get("free", {"cycles": ["morning"]})
+    return plan_cfg["cycles"]
+
+
+def account_wait_seconds(account: dict) -> int:
+    """Wait time before processing the next account on this same user.
+
+    Honours ``post_interval_minutes`` (account-level setting) with a small
+    random jitter so independent runs don't fire simultaneously. Defaults
+    to 15 minutes if the column is missing or invalid.
+    """
+    try:
+        base = int(account.get("post_interval_minutes") or 15)
+    except (TypeError, ValueError):
+        base = 15
+    base = max(1, min(base, 1440))
+    jitter = random.randint(0, 5)  # up to 5 minutes of jitter
+    return (base + jitter) * 60
 
 
 # ---------------------------------------------------------------------------
@@ -91,7 +117,10 @@ async def process_user(user: dict, cycle: str):
                     user.get("id"), user.get("plan"), cycle)
         return
 
-    user_accounts = db.get_accounts(user["id"])
+    raw_accounts = db.get_accounts(user["id"])
+    # Decrypt credential columns once at the boundary so downstream modules
+    # can treat values as plaintext.
+    user_accounts = [decrypt_account_secrets(a) for a in raw_accounts]
     user = {**user, "accounts": user_accounts}
     accounts = get_allowed_accounts(user)
 
@@ -111,7 +140,7 @@ async def process_user(user: dict, cycle: str):
 
         try:
             # Step 1: Scrape X trends
-            research = await scraper.run(account, genre_config)
+            research = await scraper.run(account, genre_config, cycle)
 
             # Step 2: Generate X post text
             post = await generator.run(account, research, cycle, genre_config)
@@ -156,11 +185,12 @@ async def process_user(user: dict, cycle: str):
             except Exception:
                 logger.exception("Failed to send Discord error notification")
 
-        # Random wait between accounts to avoid rate limits
+        # Wait between accounts on the same user, honouring the *next* account's
+        # post_interval_minutes so per-account spacing settings are respected.
         if idx < len(accounts) - 1:
-            interval = random.randint(15, 20) * 60
-            logger.info("Waiting {} min before next account", interval // 60)
-            await asyncio.sleep(interval)
+            wait_s = account_wait_seconds(accounts[idx + 1])
+            logger.info("Waiting {} min before next account", wait_s // 60)
+            await asyncio.sleep(wait_s)
 
 
 async def run_cycle(cycle: str):

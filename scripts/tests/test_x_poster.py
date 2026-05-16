@@ -85,7 +85,7 @@ class PostTweetApiTests(unittest.TestCase):
             asyncio.run(x_poster.post_tweet(account, long_text))
 
         sent = fake_client.create_tweet.call_args.kwargs["text"]
-        self.assertEqual(len(sent), 280)
+        self.assertEqual(len(sent), x_poster._MAX_TWEET_LEN)
         self.assertTrue(sent.endswith("…"))
 
     def test_post_tweet_raises_when_no_credentials(self) -> None:

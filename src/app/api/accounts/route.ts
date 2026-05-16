@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { encryptSecret } from "@/lib/crypto";
+
+// Columns that contain credentials and must never be returned to the browser.
+const SAFE_ACCOUNT_COLUMNS =
+  "id, user_id, name, genre_id, x_username, post_interval_minutes, is_active, created_at" as const;
 
 // ---------------------------------------------------------------------------
 // GET /api/accounts — list all accounts for the authenticated user
+// (credentials stripped — see SAFE_ACCOUNT_COLUMNS)
 // ---------------------------------------------------------------------------
 export async function GET() {
   const supabase = await createClient();
@@ -17,7 +23,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("accounts")
-    .select("*")
+    .select(SAFE_ACCOUNT_COLUMNS)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -31,8 +37,6 @@ export async function GET() {
 // ---------------------------------------------------------------------------
 // POST /api/accounts — create a new account
 // ---------------------------------------------------------------------------
-// X API path uses x_bearer_token; legacy Playwright fallback uses x_password.
-// We require x_username and at least one credential.
 const REQUIRED_FIELDS = ["name", "genre_id", "x_username"] as const;
 const OPTIONAL_STRING_FIELDS = [
   "x_bearer_token",
@@ -54,7 +58,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // --- parse & validate body ---
   let body: Record<string, unknown>;
   try {
     body = await request.json();
@@ -70,7 +73,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- input validation ---
   for (const field of REQUIRED_FIELDS) {
     if (typeof body[field] !== "string") {
       return NextResponse.json(
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
       );
     }
   }
+
   const name = body.name as string;
   const genreId = body.genre_id as string;
   if (name.length === 0 || name.length > 100) {
@@ -101,21 +104,44 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
-  // At least one X credential must be supplied (Bearer Token or password
-  // for the legacy Playwright fallback).
-  const hasBearer =
-    typeof body.x_bearer_token === "string" && body.x_bearer_token.length > 0;
+
+  // X API path requires the full OAuth 1.0a 4-tuple plus a Bearer Token for
+  // tweet posting on Free tier. Bearer-only attempts return 403 from X, so we
+  // reject them at the boundary instead of silently failing at post time.
+  // The Playwright fallback (x_password) is accepted on its own.
+  const apiCreds = [
+    body.x_bearer_token,
+    body.x_api_key,
+    body.x_api_secret,
+    body.x_access_token,
+    body.x_access_token_secret,
+  ];
+  const apiCredsCount = apiCreds.filter(
+    (v) => typeof v === "string" && v.length > 0,
+  ).length;
+  const hasApiSet = apiCredsCount === 5;
   const hasPassword =
     typeof body.x_password === "string" && body.x_password.length > 0;
-  if (!hasBearer && !hasPassword) {
+
+  if (apiCredsCount > 0 && !hasApiSet) {
     return NextResponse.json(
       {
         error:
-          "Provide x_bearer_token (recommended) or x_password (legacy Playwright fallback).",
+          "X API V2 credentials are incomplete. Provide all five: x_bearer_token, x_api_key, x_api_secret, x_access_token, x_access_token_secret.",
       },
       { status: 400 },
     );
   }
+  if (!hasApiSet && !hasPassword) {
+    return NextResponse.json(
+      {
+        error:
+          "Provide the full X API V2 credential set (recommended) or x_password (legacy Playwright fallback).",
+      },
+      { status: 400 },
+    );
+  }
+
   if (
     body.post_interval_minutes !== undefined &&
     (typeof body.post_interval_minutes !== "number" ||
@@ -129,7 +155,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- check plan limit ---
+  // --- plan limit check (active accounts only) ---
   const { data: userRow, error: userError } = await supabase
     .from("users")
     .select("plan")
@@ -159,7 +185,8 @@ export async function POST(request: NextRequest) {
   const { count, error: countError } = await supabase
     .from("accounts")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("is_active", true);
 
   if (countError) {
     return NextResponse.json(
@@ -177,11 +204,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // --- insert ---
+  // --- insert (credentials encrypted at rest) ---
   const insertRow: Record<string, unknown> = {
     user_id: user.id,
-    name: body.name as string,
-    genre_id: body.genre_id as string,
+    name,
+    genre_id: genreId,
     x_username: body.x_username as string,
     post_interval_minutes:
       typeof body.post_interval_minutes === "number"
@@ -189,25 +216,25 @@ export async function POST(request: NextRequest) {
         : 15,
   };
   if (typeof body.x_bearer_token === "string" && body.x_bearer_token.length > 0)
-    insertRow.x_bearer_token = body.x_bearer_token;
+    insertRow.x_bearer_token = encryptSecret(body.x_bearer_token);
   if (typeof body.x_api_key === "string" && body.x_api_key.length > 0)
-    insertRow.x_api_key = body.x_api_key;
+    insertRow.x_api_key = encryptSecret(body.x_api_key);
   if (typeof body.x_api_secret === "string" && body.x_api_secret.length > 0)
-    insertRow.x_api_secret = body.x_api_secret;
+    insertRow.x_api_secret = encryptSecret(body.x_api_secret);
   if (typeof body.x_access_token === "string" && body.x_access_token.length > 0)
-    insertRow.x_access_token = body.x_access_token;
+    insertRow.x_access_token = encryptSecret(body.x_access_token);
   if (
     typeof body.x_access_token_secret === "string" &&
     body.x_access_token_secret.length > 0
   )
-    insertRow.x_access_token_secret = body.x_access_token_secret;
+    insertRow.x_access_token_secret = encryptSecret(body.x_access_token_secret);
   if (typeof body.x_password === "string" && body.x_password.length > 0)
-    insertRow.x_password_enc = body.x_password; // legacy Playwright path
+    insertRow.x_password_enc = encryptSecret(body.x_password);
 
   const { data, error } = await supabase
     .from("accounts")
     .insert(insertRow)
-    .select()
+    .select(SAFE_ACCOUNT_COLUMNS)
     .single();
 
   if (error) {

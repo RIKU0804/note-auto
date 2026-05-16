@@ -55,6 +55,36 @@ export default function AccountForm({
     setLoading(true);
     setError("");
 
+    // For new accounts, posting on Free tier requires the full OAuth 1.0a
+    // set plus a Bearer Token. Catch this in the form so the user gets a
+    // single clear error instead of a 400 from the API.
+    if (!account) {
+      const apiFields = [
+        xBearerToken,
+        xApiKey,
+        xApiSecret,
+        xAccessToken,
+        xAccessTokenSecret,
+      ];
+      const filled = apiFields.filter((v) => v.length > 0).length;
+      const hasFullSet = filled === 5;
+      const hasPassword = xPassword.length > 0;
+      if (!hasFullSet && !hasPassword) {
+        setError(
+          "X API V2 認証情報（Bearer Token + API Key/Secret + Access Token/Secret の5点）をすべて入力してください。Playwright フォールバックのみで運用する場合は X パスワードを入力してください。",
+        );
+        setLoading(false);
+        return;
+      }
+      if (filled > 0 && !hasFullSet) {
+        setError(
+          "X API V2 の5項目は一部だけの入力では投稿に失敗します。Bearer Token、API Key、API Secret、Access Token、Access Token Secret をすべて入力してください。",
+        );
+        setLoading(false);
+        return;
+      }
+    }
+
     const body: Record<string, unknown> = {
       name,
       genre_id: genreId,
@@ -172,9 +202,10 @@ export default function AccountForm({
           >
             X Developer Portal
           </a>
-          で App を作成し、以下を取得してください。Bearer Token は必須、
-          OAuth 1.0a 4点（API Key/Secret + Access Token/Secret）も入れると
-          投稿が安定します。
+          で App を作成し、以下5点をすべて取得してください。
+          Free tier では Bearer Token 単独では投稿が 403 になるため、
+          OAuth 1.0a 4点（API Key/Secret + Access Token/Secret）と
+          Bearer Token をすべて揃える必要があります。
         </p>
 
         <div className="space-y-3">
@@ -203,7 +234,7 @@ export default function AccountForm({
                 autoComplete="off"
                 value={xApiKey}
                 onChange={(e) => setXApiKey(e.target.value)}
-                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                placeholder={account ? "変更しない場合は空欄" : "（必須）"}
                 className={inputFocusClass}
                 style={inputStyle}
               />
@@ -217,7 +248,7 @@ export default function AccountForm({
                 autoComplete="off"
                 value={xApiSecret}
                 onChange={(e) => setXApiSecret(e.target.value)}
-                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                placeholder={account ? "変更しない場合は空欄" : "（必須）"}
                 className={inputFocusClass}
                 style={inputStyle}
               />
@@ -231,7 +262,7 @@ export default function AccountForm({
                 autoComplete="off"
                 value={xAccessToken}
                 onChange={(e) => setXAccessToken(e.target.value)}
-                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                placeholder={account ? "変更しない場合は空欄" : "（必須）"}
                 className={inputFocusClass}
                 style={inputStyle}
               />
@@ -245,7 +276,7 @@ export default function AccountForm({
                 autoComplete="off"
                 value={xAccessTokenSecret}
                 onChange={(e) => setXAccessTokenSecret(e.target.value)}
-                placeholder={account ? "変更しない場合は空欄" : "（任意）"}
+                placeholder={account ? "変更しない場合は空欄" : "（必須）"}
                 className={inputFocusClass}
                 style={inputStyle}
               />

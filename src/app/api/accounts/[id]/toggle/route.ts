@@ -42,7 +42,9 @@ export async function POST(
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("is_active", account.is_active)
-    .select()
+    .select(
+      "id, user_id, name, genre_id, x_username, post_interval_minutes, is_active, created_at",
+    )
     .single();
 
   if (error) {

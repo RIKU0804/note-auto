@@ -131,6 +131,7 @@ npm install
    - `supabase/001_initial_schema.sql` の内容すべて
    - （旧バージョンからアップグレードする場合のみ）`supabase/002_remove_note.sql`
    - **`supabase/003_xapi_migration.sql`**（X API V2 用カラム追加。新規・既存問わず実行）
+   - **`supabase/004_dashboard_alignment.sql`**（`post_interval_minutes` / `discord_user_id` / CHECK 制約等。新規・既存問わず実行）
 4. **Project Settings → API** ページで以下をメモする:
    - `Project URL` (例: `https://xxxx.supabase.co`)
    - `anon public` キー (ダッシュボード公開用)
@@ -193,6 +194,9 @@ CRON_SECRET=$(openssl rand -hex 32)
 | `SUPABASE_KEY` | Step 2 の `service_role` キー |
 | `OPENROUTER_API_KEY` | Step 3 の API キー |
 | `OPENROUTER_MODEL` | `anthropic/claude-3-haiku` |
+| `ENCRYPTION_KEY` | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` で生成した 32 byte hex |
+| `X_CLIENT` (任意) | `api`(既定) または `playwright` |
+| `X_BEARER_TOKEN` (任意) | 共有スクレイパー用 Bearer Token |
 
 `gh` CLI で一括投入する場合:
 
@@ -222,6 +226,7 @@ gh secret set OPENROUTER_MODEL --body "anthropic/claude-3-haiku"
 | `SUPABASE_URL` | Step 2 の Project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Step 2 の `service_role` キー |
 | `CRON_SECRET` | Step 4 で生成した値 |
+| `ENCRYPTION_KEY` | GitHub Actions Secrets と**同じ** 32 byte hex（鍵が違うと worker 側で復号できない） |
 
 4. **Deploy** をクリック → 公開 URL が発行される
 

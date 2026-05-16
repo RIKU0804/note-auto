@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 // ---------------------------------------------------------------------------
 // GET /api/posts — list posts with pagination
-// Query params: page, limit, status, account_id
+// Query params: page, limit, status, account_id, date_from, date_to
 // ---------------------------------------------------------------------------
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
@@ -22,23 +22,40 @@ export async function GET(request: NextRequest) {
     100,
     Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)),
   );
-  const status = searchParams.get("status"); // "queued" | "posted" | "failed"
+  const status = searchParams.get("status");
   const accountId = searchParams.get("account_id");
+  const dateFrom = searchParams.get("date_from");
+  const dateTo = searchParams.get("date_to");
 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
   let query = supabase
     .from("posts")
-    .select("*, accounts!inner(name)", { count: "exact" })
+    .select("*", { count: "exact" })
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (status) {
+  if (status === "queued" || status === "posted" || status === "failed") {
     query = query.eq("status", status);
   }
   if (accountId) {
     query = query.eq("account_id", accountId);
+  }
+  if (dateFrom) {
+    // Treat input as a JST calendar day; convert to UTC bound.
+    const d = new Date(`${dateFrom}T00:00:00+09:00`);
+    if (!Number.isNaN(d.getTime())) {
+      query = query.gte("created_at", d.toISOString());
+    }
+  }
+  if (dateTo) {
+    // Inclusive end-of-day in JST.
+    const d = new Date(`${dateTo}T23:59:59.999+09:00`);
+    if (!Number.isNaN(d.getTime())) {
+      query = query.lte("created_at", d.toISOString());
+    }
   }
 
   const { data, error, count } = await query;
@@ -48,7 +65,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
-    data,
+    data: data ?? [],
     pagination: {
       page,
       limit,

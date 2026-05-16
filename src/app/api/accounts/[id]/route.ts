@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { encryptSecret } from "@/lib/crypto";
+
+const SAFE_ACCOUNT_COLUMNS =
+  "id, user_id, name, genre_id, x_username, post_interval_minutes, is_active, created_at" as const;
+
+// Fields whose values must be encrypted before persisting.
+const ENCRYPTED_FIELDS = new Set([
+  "x_bearer_token",
+  "x_api_key",
+  "x_api_secret",
+  "x_access_token",
+  "x_access_token_secret",
+  "x_password_enc",
+]);
 
 // ---------------------------------------------------------------------------
 // PUT /api/accounts/[id] — update an account
@@ -26,7 +40,6 @@ export async function PUT(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  // Only allow updating specific fields
   const allowedFields: Record<string, string> = {
     name: "name",
     genre_id: "genre_id",
@@ -43,8 +56,15 @@ export async function PUT(
 
   const updates: Record<string, unknown> = {};
   for (const [inputKey, dbColumn] of Object.entries(allowedFields)) {
-    if (body[inputKey] !== undefined) {
-      updates[dbColumn] = body[inputKey];
+    if (body[inputKey] === undefined) continue;
+    const value = body[inputKey];
+    if (ENCRYPTED_FIELDS.has(dbColumn) && typeof value === "string") {
+      // Skip empty-string updates so "leave the token alone" is the default
+      // when the form omits the field.
+      if (value.length === 0) continue;
+      updates[dbColumn] = encryptSecret(value);
+    } else {
+      updates[dbColumn] = value;
     }
   }
 
@@ -60,7 +80,7 @@ export async function PUT(
     .update(updates)
     .eq("id", id)
     .eq("user_id", user.id)
-    .select()
+    .select(SAFE_ACCOUNT_COLUMNS)
     .single();
 
   if (error) {
@@ -99,7 +119,7 @@ export async function DELETE(
     .update({ is_active: false })
     .eq("id", id)
     .eq("user_id", user.id)
-    .select()
+    .select(SAFE_ACCOUNT_COLUMNS)
     .single();
 
   if (error) {

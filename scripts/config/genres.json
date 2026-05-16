@@ -1,28 +1,32 @@
 {
   "genres": [
     {
-      "name": "lifestyle",
-      "search_keywords": ["ライフスタイル", "暮らし", "生活改善", "習慣", "ルーティン"],
-      "article_style": "カジュアルで親しみやすいトーン。日常の気づきや体験談を交えて読みやすく。",
-      "reply_style": "共感ベースで寄り添う返信。絵文字は控えめに。"
+      "name": "self-improvement",
+      "label": "自己啓発",
+      "search_keywords": ["自己啓発", "習慣", "ルーティン", "マインドセット", "成長"],
+      "article_style": "前向きで背中を押すトーン。読み手の行動を具体的に促す。",
+      "reply_style": "共感と励まし。次の一歩を提案する。"
     },
     {
-      "name": "money",
-      "search_keywords": ["お金", "副業", "節約", "投資", "資産形成"],
+      "name": "business",
+      "label": "ビジネス",
+      "search_keywords": ["ビジネス", "経営", "マーケティング", "副業", "起業"],
       "article_style": "具体的な数字やデータを交えた説得力のある文体。信頼感を重視。",
       "reply_style": "論理的かつ丁寧な返信。具体例を添えて。"
     },
     {
       "name": "health",
+      "label": "健康・美容",
       "search_keywords": ["健康", "ダイエット", "筋トレ", "メンタルヘルス", "睡眠"],
       "article_style": "エビデンスに基づきつつ、わかりやすく噛み砕いた解説。",
       "reply_style": "優しく励ます返信。無理のないアドバイスを添えて。"
     },
     {
-      "name": "career",
-      "search_keywords": ["キャリア", "転職", "スキルアップ", "仕事術", "フリーランス"],
-      "article_style": "実践的でアクション可能なアドバイス。読者の背中を押す文体。",
-      "reply_style": "前向きで建設的な返信。次のステップを提案。"
+      "name": "technology",
+      "label": "テクノロジー",
+      "search_keywords": ["AI", "テクノロジー", "プログラミング", "ガジェット", "Web開発"],
+      "article_style": "最新情報をキャッチアップしつつ、初心者にも届く言葉で解説。",
+      "reply_style": "技術的に正確かつフレンドリーな返信。具体的なリンクや例を交えて。"
     }
   ]
 }

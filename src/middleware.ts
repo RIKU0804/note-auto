@@ -34,8 +34,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Allow public routes without auth
-  const publicPaths = ["/login", "/signup"];
+  // Allow public routes without auth.
+  // /api/cron/* is authenticated by CRON_SECRET (Bearer header), not by a
+  // Supabase session, so it must bypass this middleware entirely — otherwise
+  // Vercel Cron requests get 307'd to /login before reaching the handler.
+  const publicPaths = ["/login", "/signup", "/api/cron"];
   const isPublicPath = publicPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );

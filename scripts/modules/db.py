@@ -26,6 +26,46 @@ def get_active_users() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Plan limits
+# ---------------------------------------------------------------------------
+
+_PLAN_CYCLES = {
+    1: ["morning"],
+    2: ["morning", "night"],
+}
+
+
+def get_plan_limits() -> dict[str, dict]:
+    """Return plan_limits keyed by plan name.
+
+    Each value carries the row's ``max_accounts`` and a derived list of
+    cycles based on ``cycles_per_day`` (1 → morning only, 2 → morning+night).
+    Falls back to a sensible static set if the table is unreachable.
+    """
+    try:
+        rows = supabase.table("plan_limits").select("*").execute().data or []
+    except Exception as e:
+        logger.error("Failed to read plan_limits — falling back to defaults: {}", e)
+        rows = []
+
+    if not rows:
+        return {
+            "free":     {"max_accounts": 1,  "cycles": ["morning"]},
+            "pro":      {"max_accounts": 3,  "cycles": ["morning", "night"]},
+            "business": {"max_accounts": 10, "cycles": ["morning", "night"]},
+        }
+
+    limits: dict[str, dict] = {}
+    for row in rows:
+        cycles_per_day = int(row.get("cycles_per_day") or 1)
+        limits[row["plan"]] = {
+            "max_accounts": int(row.get("max_accounts") or 1),
+            "cycles": _PLAN_CYCLES.get(cycles_per_day, ["morning"]),
+        }
+    return limits
+
+
+# ---------------------------------------------------------------------------
 # Accounts
 # ---------------------------------------------------------------------------
 

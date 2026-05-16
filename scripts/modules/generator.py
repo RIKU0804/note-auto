@@ -9,6 +9,11 @@ from loguru import logger
 
 _OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+# Japanese tweets are billed at 2 weighted chars per code point, so the
+# effective Japanese-character ceiling on X is 140. The dashboard surfaces
+# this same limit to users, so we truncate accordingly.
+_MAX_TWEET_LEN = 140
+
 _PROMPT_TEMPLATE = """\
 あなたはX(旧Twitter)で活動する{genre}ジャンルのインフルエンサーです。
 
@@ -80,9 +85,9 @@ async def run(account: dict, research: dict, cycle: str, genre_config: dict) -> 
 
         tweet_text = data["choices"][0]["message"]["content"].strip().strip('"').strip("'")
 
-        if len(tweet_text) > 280:
-            tweet_text = tweet_text[:279] + "…"
-            logger.warning("Tweet truncated to 280 chars")
+        if len(tweet_text) > _MAX_TWEET_LEN:
+            tweet_text = tweet_text[: _MAX_TWEET_LEN - 1] + "…"
+            logger.warning("Tweet truncated to {} chars", _MAX_TWEET_LEN)
 
         logger.info("Generated tweet ({} chars): {}…", len(tweet_text), tweet_text[:50])
         return {"tweet_text": tweet_text, "cycle": cycle}

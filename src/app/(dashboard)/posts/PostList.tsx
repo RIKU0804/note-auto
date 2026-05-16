@@ -38,7 +38,8 @@ export default function PostList({
   totalCount: number;
 }) {
   const [posts, setPosts] = useState(initialPosts);
-  const [page, setPage] = useState(0);
+  // page is 1-indexed to match the API contract.
+  const [page, setPage] = useState(1);
   const [total, setTotal] = useState(totalCount);
   const [loading, setLoading] = useState(false);
 
@@ -47,12 +48,12 @@ export default function PostList({
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
 
-  const totalPages = Math.ceil(total / PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 
   const fetchPosts = async (newPage: number) => {
     setLoading(true);
     const params = new URLSearchParams();
-    params.set("offset", String(newPage * PER_PAGE));
+    params.set("page", String(newPage));
     params.set("limit", String(PER_PAGE));
     if (filterAccount) params.set("account_id", filterAccount);
     if (filterStatus) params.set("status", filterStatus);
@@ -62,9 +63,9 @@ export default function PostList({
     try {
       const res = await fetch(`/api/posts?${params.toString()}`);
       if (res.ok) {
-        const data = await res.json();
-        setPosts(data.posts);
-        setTotal(data.total);
+        const json = await res.json();
+        setPosts(json.data ?? []);
+        setTotal(json.pagination?.total ?? 0);
         setPage(newPage);
       }
     } finally {
@@ -73,7 +74,7 @@ export default function PostList({
   };
 
   const handleFilter = () => {
-    fetchPosts(0);
+    fetchPosts(1);
   };
 
   const handleRetry = async (postId: string) => {
@@ -303,13 +304,13 @@ export default function PostList({
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm" style={{ color: 'rgba(38, 37, 30, 0.72)' }}>
-            全 {total} 件中 {page * PER_PAGE + 1} -{" "}
-            {Math.min((page + 1) * PER_PAGE, total)} 件
+            全 {total} 件中 {(page - 1) * PER_PAGE + 1} -{" "}
+            {Math.min(page * PER_PAGE, total)} 件
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => fetchPosts(page - 1)}
-              disabled={page === 0 || loading}
+              disabled={page <= 1 || loading}
               className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
               style={{ color: 'rgba(38, 37, 30, 0.72)' }}
               onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.color = '#26251e'; }}
@@ -320,7 +321,7 @@ export default function PostList({
             </button>
             <button
               onClick={() => fetchPosts(page + 1)}
-              disabled={page >= totalPages - 1 || loading}
+              disabled={page >= totalPages || loading}
               className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40"
               style={{ color: 'rgba(38, 37, 30, 0.72)' }}
               onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.color = '#26251e'; }}

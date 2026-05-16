@@ -39,6 +39,8 @@ Thumbs.db
 .next/
 out/
 node_modules/
+tsconfig.tsbuildinfo
+next-env.d.ts
 
 # Logs
 *.log

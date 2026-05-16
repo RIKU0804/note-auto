@@ -11,9 +11,9 @@ caps per-genre fetches accordingly.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
-from datetime import datetime, timezone
 from typing import Any
 
 import httpx
@@ -44,23 +44,24 @@ def _bearer_token_for(account: dict) -> str | None:
 
     Account-specific tokens are preferred; fall back to a project-wide
     ``X_BEARER_TOKEN`` env var so a shared scraper key can serve all users.
+    Caller is expected to pass a decrypted account dict.
     """
     return account.get("x_bearer_token") or os.environ.get("X_BEARER_TOKEN")
 
 
 def _build_search_query(keyword: str) -> str:
     """Compose a Recent Search query: Japanese, no retweets, has engagement."""
-    # Quote keyword to match phrase if it contains spaces.
     kw = keyword.strip()
     if " " in kw:
         kw = f'"{kw}"'
     return f"{kw} lang:ja -is:retweet"
 
 
-def _search_recent_for_keyword(
+def _search_recent_for_keyword_sync(
     client: tweepy.Client, keyword: str, per_keyword: int, min_likes: int
 ) -> list[dict[str, Any]]:
-    """Run one Recent Search call and shape the response into our row format."""
+    """Synchronous tweepy call. Wrapped by ``asyncio.to_thread`` from the
+    async caller so the event loop is not blocked."""
     query = _build_search_query(keyword)
     max_results = max(10, min(SCRAPE_CONFIG["x_recent_max_results"], 100))
 
@@ -127,7 +128,9 @@ async def collect_x_posts(account: dict, genre_config: dict) -> list[dict[str, A
     for keyword in keywords:
         if len(seen) >= target:
             break
-        rows = _search_recent_for_keyword(client, keyword, per_kw, min_likes)
+        rows = await asyncio.to_thread(
+            _search_recent_for_keyword_sync, client, keyword, per_kw, min_likes
+        )
         for row in rows:
             tid = row["tweet_id"]
             if tid and tid not in seen:
@@ -141,6 +144,16 @@ async def collect_x_posts(account: dict, genre_config: dict) -> list[dict[str, A
 # ---------------------------------------------------------------------------
 # AI trend analysis
 # ---------------------------------------------------------------------------
+
+def _strip_code_fence(content: str) -> str:
+    s = content.strip()
+    if s.startswith("```"):
+        s = s.split("\n", 1)[1] if "\n" in s else s[3:]
+        if s.endswith("```"):
+            s = s[:-3]
+        s = s.strip()
+    return s
+
 
 async def analyze_trends(x_posts: list[dict], genre_config: dict) -> dict:
     """Use OpenRouter AI to analyze collected X posts and extract trends."""
@@ -188,13 +201,7 @@ JSONのみを返してください。"""
             resp.raise_for_status()
             data = resp.json()
 
-        content = data["choices"][0]["message"]["content"].strip()
-        if content.startswith("```"):
-            content = content.split("\n", 1)[1] if "\n" in content else content[3:]
-            if content.endswith("```"):
-                content = content[:-3]
-            content = content.strip()
-
+        content = _strip_code_fence(data["choices"][0]["message"]["content"])
         result = json.loads(content)
         logger.info("Trend analysis complete: {} topics", len(result.get("top_topics", [])))
         return result
@@ -208,16 +215,17 @@ JSONのみを返してください。"""
 # Orchestrator
 # ---------------------------------------------------------------------------
 
-async def run(account: dict, genre_config: dict) -> dict:
+async def run(account: dict, genre_config: dict, cycle: str) -> dict:
     """Collect X trends and analyze them with AI.
 
     Returns dict with keys: x_posts, analysis
     """
     genre_name = genre_config.get("name", "unknown")
     logger.info(
-        "Starting scraper for genre '{}', account '{}'",
+        "Starting scraper for genre '{}', account '{}', cycle '{}'",
         genre_name,
         account.get("name", account.get("id", "unknown")),
+        cycle,
     )
 
     x_posts = await collect_x_posts(account, genre_config)
@@ -226,7 +234,6 @@ async def run(account: dict, genre_config: dict) -> dict:
     analysis = await analyze_trends(x_posts, genre_config)
 
     try:
-        cycle = datetime.now(timezone.utc).strftime("%Y%m%d_%H")
         db.save_research(
             user_id=account["user_id"],
             account_id=account["id"],

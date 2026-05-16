@@ -26,7 +26,9 @@ from typing import Any
 import tweepy
 from loguru import logger
 
-_MAX_TWEET_LEN = 280
+# Japanese tweets are weighted 2x in X's character counter, so the
+# practical ceiling for ja-only text is 140. Match the generator.
+_MAX_TWEET_LEN = 140
 _DEFAULT_CLIENT = "api"
 
 

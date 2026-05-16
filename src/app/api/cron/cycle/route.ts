@@ -4,16 +4,19 @@ import crypto from "crypto";
 import { PLAN_LIMITS, type Cycle } from "@/types/database";
 
 // ---------------------------------------------------------------------------
-// GET /api/cron/cycle — Vercel Cron-compatible cycle trigger
+// GET/POST /api/cron/cycle
 //
-// Vercel Cron always sends GET requests with the CRON_SECRET as a Bearer
-// token in the Authorization header.  This endpoint uses the service-role
-// key (not the anon key) so it can iterate over all active users
-// regardless of RLS.
+// Optional manual cycle trigger. The primary scheduler is the GitHub Actions
+// Python worker (scripts/worker.py) — this endpoint exists so an operator
+// can fan out a Discord "cycle starting" announcement on demand without
+// duplicating any DB writes the worker is responsible for.
+//
+// Auth: Bearer token equal to env CRON_SECRET, compared in constant time
+// using an HMAC of both values so neither length nor content leaks via
+// timing.
 // ---------------------------------------------------------------------------
 
 function getCycleForHour(hour: number): Cycle | null {
-  // JST-based cycle mapping
   if (hour >= 6 && hour < 10) return "morning";
   if (hour >= 19 && hour < 23) return "night";
   return null;
@@ -23,8 +26,17 @@ function isCycle(value: string | null): value is Cycle {
   return value === "morning" || value === "night";
 }
 
+function constantTimeEqual(provided: string, expected: string): boolean {
+  // Hash both sides with a per-request random key so that:
+  //   1. the comparison runs over equal-length buffers (timingSafeEqual rule), and
+  //   2. an attacker timing the request learns nothing about the secret's length.
+  const key = crypto.randomBytes(32);
+  const a = crypto.createHmac("sha256", key).update(provided).digest();
+  const b = crypto.createHmac("sha256", key).update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 async function handle(request: NextRequest) {
-  // --- Verify CRON_SECRET (timing-safe) ---
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     return NextResponse.json(
@@ -33,18 +45,16 @@ async function handle(request: NextRequest) {
     );
   }
 
-  const authHeader = request.headers.get("authorization");
-  const expected = Buffer.from(cronSecret);
-  const provided = Buffer.from(authHeader?.replace("Bearer ", "") ?? "");
-  if (
-    expected.length !== provided.length ||
-    !crypto.timingSafeEqual(expected, provided)
-  ) {
+  const authHeader = request.headers.get("authorization") ?? "";
+  const provided = authHeader.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : "";
+
+  if (!constantTimeEqual(provided, cronSecret)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // --- Determine current cycle ---
-  // Query param is the source of truth; fall back to JST-hour derivation.
+  // --- Resolve cycle from query or JST clock ---
   const cycleParam = request.nextUrl.searchParams.get("cycle");
   const jstHourStr = new Date().toLocaleString("en-US", {
     timeZone: "Asia/Tokyo",
@@ -70,11 +80,11 @@ async function handle(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       message: `No cycle active at JST hour ${hour}. Skipping.`,
-      processed: 0,
+      notified: 0,
     });
   }
 
-  // --- Use service role client to bypass RLS ---
+  // --- service role client (RLS bypass) for cross-user iteration ---
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -87,7 +97,6 @@ async function handle(request: NextRequest) {
 
   const supabase = createServerClient(supabaseUrl, serviceRoleKey);
 
-  // --- Fetch all active users ---
   const { data: users, error: usersError } = await supabase
     .from("users")
     .select("id, email, plan, discord_webhook_url")
@@ -102,122 +111,73 @@ async function handle(request: NextRequest) {
 
   const results: Array<{
     user_id: string;
-    accounts_triggered: number;
+    notified: boolean;
     skipped?: string;
-    error?: string;
   }> = [];
 
-  for (const user of users ?? []) {
-    try {
-      // Respect plan cycle limits — skip users whose plan does not
-      // include the requested cycle (e.g. free plan = morning only).
+  await Promise.all(
+    (users ?? []).map(async (user) => {
       const planKey = user.plan as keyof typeof PLAN_LIMITS;
       const planLimits = PLAN_LIMITS[planKey];
       if (!planLimits || !planLimits.cycles.includes(cycle)) {
         results.push({
           user_id: user.id,
-          accounts_triggered: 0,
+          notified: false,
           skipped: `plan "${user.plan}" does not include cycle "${cycle}"`,
         });
-        continue;
+        return;
       }
 
-      // Fetch active accounts for this user
-      const { data: accounts, error: accError } = await supabase
+      const { count } = await supabase
         .from("accounts")
-        .select("id, name, genre_id")
+        .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("is_active", true);
 
-      if (accError) {
-        results.push({
-          user_id: user.id,
-          accounts_triggered: 0,
-          error: accError.message,
-        });
-        continue;
+      if (!user.discord_webhook_url || (count ?? 0) === 0) {
+        results.push({ user_id: user.id, notified: false });
+        return;
       }
 
-      if (!accounts || accounts.length === 0) {
-        results.push({ user_id: user.id, accounts_triggered: 0 });
-        continue;
-      }
+      const nowJST = new Date().toLocaleString("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
 
-      // Create queued posts for each active account.
-      // tweet_text is NOT NULL in the schema; write a placeholder that
-      // the worker overwrites once generation completes.
-      const posts = accounts.map((account) => ({
-        user_id: user.id,
-        account_id: account.id,
-        cycle,
-        tweet_text: "(生成待ち)",
-        status: "queued",
-      }));
+      const embed = {
+        title: `サイクル開始通知: ${cycle}`,
+        description: [
+          `対象アカウント数: **${count ?? 0}**`,
+          `ユーザー: ${user.email}`,
+        ].join("\n"),
+        color: 0x3498db,
+        timestamp: new Date().toISOString(),
+        footer: { text: `${nowJST} JST` },
+      };
 
-      const { error: insertError } = await supabase
-        .from("posts")
-        .insert(posts);
-
-      if (insertError) {
-        results.push({
-          user_id: user.id,
-          accounts_triggered: 0,
-          error: insertError.message,
-        });
-        continue;
-      }
-
-      // Send Discord notification if webhook is configured
-      if (user.discord_webhook_url) {
-        const nowJST = new Date().toLocaleString("ja-JP", {
-          timeZone: "Asia/Tokyo",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        });
-
-        const embed = {
-          title: `サイクル開始: ${cycle}`,
-          description: [
-            `対象アカウント数: **${accounts.length}**`,
-            `ユーザー: ${user.email}`,
-          ].join("\n"),
-          color: 0x3498db,
-          timestamp: new Date().toISOString(),
-          footer: { text: `${nowJST} JST` },
-        };
-
-        // Fire-and-forget — don't block the cron response
-        fetch(user.discord_webhook_url, {
+      try {
+        await fetch(user.discord_webhook_url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ embeds: [embed] }),
-        }).catch(() => {
-          /* ignore webhook errors */
         });
+        results.push({ user_id: user.id, notified: true });
+      } catch {
+        results.push({ user_id: user.id, notified: false });
       }
-
-      results.push({
-        user_id: user.id,
-        accounts_triggered: accounts.length,
-      });
-    } catch (err) {
-      results.push({
-        user_id: user.id,
-        accounts_triggered: 0,
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
-    }
-  }
+    }),
+  );
 
   return NextResponse.json({
     ok: true,
     cycle,
     jst_hour: hour,
-    processed: results.length,
+    notified: results.filter((r) => r.notified).length,
     results,
   });
 }

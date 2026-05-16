@@ -3,7 +3,10 @@
 Each user has their own webhook URL stored in Supabase (users.discord_webhook_url).
 """
 
+from __future__ import annotations
+
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 
 import httpx
 from loguru import logger
@@ -68,7 +71,7 @@ async def tweet_done(user: dict, account: dict, post: dict, tweet_url: str) -> N
     })
 
 
-async def error(user: dict, module: str, message: str, account: dict = None) -> None:
+async def error(user: dict, module: str, message: str, account: Optional[dict] = None) -> None:
     """Notify an error occurred."""
     desc = f"**モジュール**: {module}\n**エラー**: {message}"
     if account:

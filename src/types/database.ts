@@ -45,10 +45,10 @@ export type Post = {
 export type Log = {
   id: string;
   user_id: string;
-  account_id: string;
-  action: string;
+  account_id: string | null;
+  module: string;
   message: string;
-  level: "info" | "warn" | "error";
+  level: "info" | "warning" | "error";
   created_at: string;
 };
 
